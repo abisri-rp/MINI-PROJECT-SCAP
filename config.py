@@ -7,7 +7,7 @@ load_dotenv(BASE_DIR / ".env")
 
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "scap-career-advancement-super-secret-key-2026")
-    UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER", "/tmp/scap_uploads")
+    UPLOAD_FOLDER = Path(os.getenv("UPLOAD_FOLDER", "/tmp/uploads"))
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max file upload
     ALLOWED_EXTENSIONS = {"pdf", "docx"}
     
