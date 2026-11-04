@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}Progress Tracking{% endblock %}
+{% block page_title %}Closed-Loop Progress & Learning Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">📈 Closed-Loop Progress Dashboard</h1>
+        <p class="page-subtitle">Continuous measurement of resume quality evolution, technical mock readiness, and targeted learning resources.</p>
+    </div>
+</div>
+
+<!-- Scientific Integrity Notice -->
+<div class="card" style="margin-bottom: 24px; background: #f8fafc; border-left: 4px solid #3b82f6;">
+    <div style="font-size: 13px; color: #334155;">
+        ℹ️ <strong>Measurement Transparency Note:</strong> Resume quality scores and assessment test performances are tracked as 
+        <strong>independent measurements</strong>. An increase in resume formatting score signifies improved articulation and clarity, 
+        while mock interviews and aptitude tests evaluate practical technical problem-solving competency.
+    </div>
+</div>
+
+<!-- Evolution Across Resume Versions -->
+<div class="card" style="margin-bottom: 28px;">
+    <div class="card-header">
+        <div class="card-title">📄 Resume Score Evolution Across Revisions</div>
+    </div>
+    {% if timeline.resumes %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Version</th>
+                    <th>Uploaded Date</th>
+                    <th>Predicted Track</th>
+                    <th>Completeness</th>
+                    <th>Skills</th>
+                    <th>Projects</th>
+                    <th>Verbs/Metrics</th>
+                    <th>Readability</th>
+                    <th>Total Score</th>
+                    <th>Admin Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in timeline.resumes %}
+                <tr>
+                    <td><strong>Version {{ r.version_number }}</strong></td>
+                    <td>{{ r.uploaded_at }}</td>
+                    <td><span class="badge badge-primary">{{ r.predicted_category }}</span></td>
+                    <td>{{ r.completeness_score }}/20</td>
+                    <td>{{ r.skills_score }}/20</td>
+                    <td>{{ r.projects_score }}/20</td>
+                    <td>{{ r.verbs_score }}/20</td>
+                    <td>{{ r.readability_score }}/20</td>
+                    <td>
+                        <strong style="font-size: 16px; color: var(--primary);">{{ r.total_score }}</strong>
+                    </td>
+                    <td>
+                        <span class="badge {% if r.review_status == 'Approved' %}badge-approved{% elif r.review_status == 'Improvement Required' %}badge-improvement{% else %}badge-pending{% endif %}">
+                            {{ r.review_status or 'Pending Review' }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="font-size: 13px; color: var(--text-muted); padding: 12px 0;">No resume versions uploaded yet.</p>
+    {% endif %}
+</div>
+
+<!-- Technical & Aptitude Growth Summary -->
+<div class="grid grid-cols-2" style="margin-bottom: 28px;">
+    <!-- Mock Interview Progress -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">💬 Technical Mock Interview Progress</div>
+            <a href="{{ url_for('assessments.interview') }}" class="btn btn-secondary btn-sm">Take Test</a>
+        </div>
+        {% if timeline.interviews %}
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            {% for i in timeline.interviews[:4] %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                <div>
+                    <div style="font-weight: 600; font-size: 13px;">{{ i.category_name }} ({{ i.difficulty }})</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">{{ i.completed_at }}</div>
+                </div>
+                <div style="font-size: 16px; font-weight: 800; color: {% if i.score_percentage >= 70 %}#059669{% elif i.score_percentage >= 50 %}#d97706{% else %}#dc2626{% endif %};">
+                    {{ i.score_percentage }}%
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="font-size: 13px; color: var(--text-muted);">No mock interviews taken yet.</p>
+        {% endif %}
+    </div>
+
+    <!-- Aptitude Exam Progress -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">⚡ Aptitude Test Performance</div>
+            <a href="{{ url_for('assessments.aptitude') }}" class="btn btn-secondary btn-sm">Take Exam</a>
+        </div>
+        {% if timeline.aptitudes %}
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            {% for a in timeline.aptitudes[:4] %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                <div>
+                    <div style="font-weight: 600; font-size: 13px;">Attempt #{{ a.attempt_id }} (Q: {{ a.quant_score }}%, L: {{ a.logical_score }}%, V: {{ a.verbal_score }}%)</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">{{ a.completed_at }}</div>
+                </div>
+                <div style="font-size: 16px; font-weight: 800; color: {% if a.score_percentage >= 70 %}#059669{% elif a.score_percentage >= 50 %}#d97706{% else %}#dc2626{% endif %};">
+                    {{ a.score_percentage }}%
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="font-size: 13px; color: var(--text-muted);">No aptitude tests completed yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recommended Learning Resources based on Weak Topics and Career Track -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">📖 Recommended Learning & Practice Resources</div>
+        {% if weak_topics %}
+        <span class="badge badge-improvement">Focus Areas: {{ weak_topics | join(', ') }}</span>
+        {% endif %}
+    </div>
+    <div class="grid grid-cols-3" style="gap: 16px;">
+        {% for r in resources %}
+        <div style="padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: #ffffff; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <span class="badge badge-primary" style="font-size: 10px; margin-bottom: 6px;">{{ r.topic }} • {{ r.resource_type }}</span>
+                <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 6px; color: var(--text-main);">{{ r.title }}</h4>
+                <p style="font-size: 12px; color: var(--text-muted); line-height: 1.4; margin-bottom: 12px;">{{ r.description }}</p>
+            </div>
+            <a href="{{ r.resource_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="font-size: 11px; width: 100%;">
+                Access Resource ↗
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

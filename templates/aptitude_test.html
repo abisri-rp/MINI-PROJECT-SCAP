@@ -1,0 +1,430 @@
+{% extends 'base.html' %}
+
+{% block title %}Aptitude Assessment{% endblock %}
+{% block page_title %}Comprehensive Placement Aptitude Test{% endblock %}
+
+{% block content %}
+<style>
+/* Timer and Dynamic Styles for Animated Effects */
+.aptitude-timer-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 22px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: #f8fafc;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25);
+    border: 2px solid #3b82f6;
+    transition: all 0.4s ease;
+    animation: aptTimerPulse 2s infinite ease-in-out;
+}
+
+@keyframes aptTimerPulse {
+    0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
+.aptitude-timer-box.warning {
+    border-color: #f59e0b;
+    animation: aptTimerWarning 1.2s infinite ease-in-out;
+    background: linear-gradient(135deg, #451a03, #78350f);
+}
+
+@keyframes aptTimerWarning {
+    0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5); }
+    70% { box-shadow: 0 0 0 12px rgba(245, 158, 11, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+.aptitude-timer-box.danger {
+    border-color: #ef4444;
+    animation: aptTimerDanger 0.7s infinite ease-in-out;
+    background: linear-gradient(135deg, #450a0a, #7f1d1d);
+}
+
+@keyframes aptTimerDanger {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    50% { transform: scale(1.03); }
+    70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* Question Bubble Navigation Grid */
+.aptitude-nav-bubbles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 22px;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+}
+
+.apt-bubble {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    background: #ffffff;
+    color: var(--text-muted);
+    border: 2px solid #cbd5e1;
+    transition: all 0.25s ease;
+}
+
+.apt-bubble:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    transform: translateY(-2px);
+}
+
+.apt-bubble.current {
+    background: #3b82f6;
+    color: #ffffff;
+    border-color: #1d4ed8;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    transform: scale(1.1);
+}
+
+.apt-bubble.answered {
+    background: #10b981;
+    color: #ffffff;
+    border-color: #059669;
+}
+
+/* Step container animation */
+.aptitude-step-page {
+    display: none;
+    animation: aptFadeIn 0.3s ease-out;
+}
+
+.aptitude-step-page.active-step {
+    display: block;
+}
+
+@keyframes aptFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Media Queries */
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    .aptitude-timer-box {
+        width: 100%;
+        justify-content: center;
+    }
+    .aptitude-nav-bubbles {
+        justify-content: center;
+    }
+}
+</style>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">⏱️ General Aptitude Assessment</h1>
+        <p class="page-subtitle">One-question-per-page timed aptitude test evaluating Quantitative, Logical, and Verbal reasoning.</p>
+    </div>
+    
+    <!-- Timer & Question Count Filter -->
+    <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+        <!-- Live Animated Timer Clock -->
+        <div id="aptitude-timer-box" class="aptitude-timer-box">
+            <span style="font-size: 20px;">⏳</span>
+            <div>
+                <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.8;">Time Remaining</div>
+                <div id="aptitude-timer-display" style="font-size: 20px; font-weight: 800; font-family: monospace; letter-spacing: 0.05em;">
+                    {% if questions %}
+                        {% set total_secs = questions|length * 60 %}
+                        {% set mins = (total_secs // 60) %}
+                        {% set secs = (total_secs % 60) %}
+                        {{ "%02d:%02d"|format(mins, secs) }}
+                    {% else %}
+                        00:00
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <form method="GET" action="{{ url_for('assessments.aptitude') }}" style="margin: 0;">
+            <select name="count" class="form-control" style="width: auto; padding: 8px 12px; font-size: 12px; font-weight: 600;" onchange="this.form.submit()">
+                <option value="15" {% if selected_count == 15 %}selected{% endif %}>15 Questions (Standard)</option>
+                <option value="20" {% if selected_count == 20 %}selected{% endif %}>20 Questions (Extended)</option>
+                <option value="30" {% if selected_count == 30 %}selected{% endif %}>30 Questions (Full)</option>
+            </select>
+        </form>
+    </div>
+</div>
+
+{% if questions %}
+<!-- Progress Bar -->
+<div style="margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px; font-weight: 600;">
+        <span style="color: var(--primary);">
+            Question <span id="current-apt-index-text">1</span> of {{ questions | length }}
+        </span>
+        <span id="apt-progress-percentage-text" style="color: var(--text-muted);">
+            {{ ((1 / (questions | length)) * 100) | round(0) }}% Completed
+        </span>
+    </div>
+    <div style="height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden;">
+        <div id="apt-progress-fill" style="height: 100%; width: {{ (1 / (questions | length)) * 100 }}%; background: linear-gradient(90deg, #3b82f6, #10b981); transition: width 0.3s ease;"></div>
+    </div>
+</div>
+
+<!-- Question Navigator Bubbles -->
+<div class="aptitude-nav-bubbles" id="apt-nav-bubbles">
+    {% for q in questions %}
+    <div class="apt-bubble {% if loop.first %}current{% endif %}" data-target-step="{{ loop.index }}" id="apt-bubble-{{ loop.index }}">
+        {{ loop.index }}
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Assessment Form (One Question Per Page) -->
+<form id="aptitude-form" method="POST" action="{{ url_for('assessments.aptitude') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    {% for q in questions %}
+    <div class="aptitude-step-page {% if loop.first %}active-step{% endif %}" id="apt-step-{{ loop.index }}" data-step="{{ loop.index }}">
+        <div class="card" style="box-shadow: 0 4px 20px rgba(0,0,0,0.06); border: 1px solid var(--border);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="badge" style="background: #3b82f6; color: white; font-weight: 700; font-size: 13px; padding: 4px 10px;">
+                        Question {{ loop.index }}
+                    </span>
+                    <span class="badge {% if q.aptitude_section == 'Quantitative' %}badge-primary{% elif q.aptitude_section == 'Logical' %}badge-approved{% else %}badge-improvement{% endif %}">
+                        Section: {{ q.aptitude_section }}
+                    </span>
+                    <span class="badge badge-neutral">{{ q.topic }}</span>
+                </div>
+                <span class="badge badge-neutral" style="font-weight: 600;">1 Mark</span>
+            </div>
+
+            <h3 style="font-size: 17px; font-weight: 700; line-height: 1.5; color: var(--text-main); margin-bottom: 22px;">
+                {{ q.question_text }}
+            </h3>
+
+            <!-- Multiple Choice Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;" class="apt-options-grid" data-qstep="{{ loop.index }}">
+                <label style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; background: #ffffff; transition: all 0.2s ease;">
+                    <input type="radio" name="q_{{ q.question_id }}" value="A" class="apt-answer-radio" data-step="{{ loop.index }}">
+                    <span style="font-weight: 800; color: #3b82f6; font-size: 15px;">A.</span>
+                    <span style="font-size: 14px; color: var(--text-main);">{{ q.option_a }}</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; background: #ffffff; transition: all 0.2s ease;">
+                    <input type="radio" name="q_{{ q.question_id }}" value="B" class="apt-answer-radio" data-step="{{ loop.index }}">
+                    <span style="font-weight: 800; color: #3b82f6; font-size: 15px;">B.</span>
+                    <span style="font-size: 14px; color: var(--text-main);">{{ q.option_b }}</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; background: #ffffff; transition: all 0.2s ease;">
+                    <input type="radio" name="q_{{ q.question_id }}" value="C" class="apt-answer-radio" data-step="{{ loop.index }}">
+                    <span style="font-weight: 800; color: #3b82f6; font-size: 15px;">C.</span>
+                    <span style="font-size: 14px; color: var(--text-main);">{{ q.option_c }}</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; background: #ffffff; transition: all 0.2s ease;">
+                    <input type="radio" name="q_{{ q.question_id }}" value="D" class="apt-answer-radio" data-step="{{ loop.index }}">
+                    <span style="font-weight: 800; color: #3b82f6; font-size: 15px;">D.</span>
+                    <span style="font-size: 14px; color: var(--text-main);">{{ q.option_d }}</span>
+                </label>
+            </div>
+
+            <!-- Step Navigation Controls -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--border);">
+                <button type="button" class="btn btn-secondary btn-apt-prev" {% if loop.first %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}>
+                    ← Previous Question
+                </button>
+
+                <div style="display: flex; gap: 10px;">
+                    {% if not loop.last %}
+                    <button type="button" class="btn btn-primary btn-apt-next">
+                        Next Question →
+                    </button>
+                    {% else %}
+                    <button type="submit" class="btn btn-primary btn-lg" style="background: linear-gradient(135deg, #10b981, #059669); border-color: #059669;">
+                        Submit Aptitude Assessment 🚀
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</form>
+
+{% else %}
+<div class="card" style="text-align: center; padding: 48px;">
+    <p style="color: var(--text-muted); font-size: 15px;">No aptitude test questions found.</p>
+</div>
+{% endif %}
+
+<!-- Dynamic Script: Live Animated Timer & Question-by-Question Navigation (Pure Vanilla JS) -->
+<script>
+(function() {
+    function initAptitudeAssessment() {
+        var totalQuestions = {{ questions | length if questions else 0 }};
+        if (totalQuestions === 0) return;
+
+        var currentStep = 1;
+
+        // Timer setup: 60 seconds per aptitude question
+        var totalTimeSeconds = totalQuestions * 60;
+        var timeRemaining = totalTimeSeconds;
+        var timerBox = document.getElementById('aptitude-timer-box');
+        var timerDisplay = document.getElementById('aptitude-timer-display');
+
+        function updateAptTimer() {
+            var minutes = Math.floor(timeRemaining / 60);
+            var seconds = timeRemaining % 60;
+            var formatted = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+            if (timerDisplay) timerDisplay.textContent = formatted;
+
+            var pctRemaining = (timeRemaining / totalTimeSeconds) * 100;
+
+            if (timerBox) {
+                if (pctRemaining <= 20) {
+                    timerBox.classList.remove('warning');
+                    timerBox.classList.add('danger');
+                } else if (pctRemaining <= 50) {
+                    timerBox.classList.remove('danger');
+                    timerBox.classList.add('warning');
+                } else {
+                    timerBox.classList.remove('warning', 'danger');
+                }
+            }
+
+            if (timeRemaining <= 0) {
+                clearInterval(aptInterval);
+                if (timerDisplay) timerDisplay.textContent = '00:00';
+                alert('⏱️ Time has expired! Your aptitude assessment is submitting automatically.');
+                var form = document.getElementById('aptitude-form');
+                if (form) form.submit();
+            } else {
+                timeRemaining--;
+            }
+        }
+
+        updateAptTimer();
+        var aptInterval = setInterval(updateAptTimer, 1000);
+
+        // Navigate to specified question step
+        function showAptStep(step) {
+            if (step < 1 || step > totalQuestions) return;
+            currentStep = step;
+
+            var pages = document.querySelectorAll('.aptitude-step-page');
+            pages.forEach(function(page) {
+                page.classList.remove('active-step');
+                page.style.display = 'none';
+            });
+
+            var activePage = document.getElementById('apt-step-' + step);
+            if (activePage) {
+                activePage.style.display = 'block';
+                activePage.classList.add('active-step');
+            }
+
+            var curText = document.getElementById('current-apt-index-text');
+            if (curText) curText.textContent = step;
+
+            var pct = Math.round((step / totalQuestions) * 100);
+            var pctText = document.getElementById('apt-progress-percentage-text');
+            if (pctText) pctText.textContent = pct + '% Completed';
+
+            var progressFill = document.getElementById('apt-progress-fill');
+            if (progressFill) progressFill.style.width = pct + '%';
+
+            document.querySelectorAll('.apt-bubble').forEach(function(bubble) {
+                bubble.classList.remove('current');
+            });
+            var curBubble = document.getElementById('apt-bubble-' + step);
+            if (curBubble) curBubble.classList.add('current');
+
+            var progressBar = document.getElementById('apt-progress-fill');
+            if (progressBar) {
+                progressBar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        // Global click handler for Next, Previous, and Bubble clicks
+        document.addEventListener('click', function(e) {
+            var nextBtn = e.target.closest('.btn-apt-next');
+            if (nextBtn) {
+                e.preventDefault();
+                showAptStep(currentStep + 1);
+                return;
+            }
+
+            var prevBtn = e.target.closest('.btn-apt-prev');
+            if (prevBtn) {
+                e.preventDefault();
+                showAptStep(currentStep - 1);
+                return;
+            }
+
+            var bubble = e.target.closest('.apt-bubble');
+            if (bubble) {
+                var targetStep = parseInt(bubble.getAttribute('data-target-step'), 10);
+                if (targetStep) {
+                    e.preventDefault();
+                    showAptStep(targetStep);
+                    return;
+                }
+            }
+        });
+
+        // Radio choice selection visual feedback & bubble marking
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('apt-answer-radio')) {
+                var step = e.target.getAttribute('data-step');
+                var bubble = document.getElementById('apt-bubble-' + step);
+                if (bubble) bubble.classList.add('answered');
+
+                var grid = e.target.closest('.apt-options-grid');
+                if (grid) {
+                    grid.querySelectorAll('label').forEach(function(lbl) {
+                        lbl.style.background = '#ffffff';
+                        lbl.style.borderColor = 'var(--border)';
+                    });
+                }
+                var lbl = e.target.closest('label');
+                if (lbl) {
+                    lbl.style.background = '#eff6ff';
+                    lbl.style.borderColor = '#3b82f6';
+                }
+            }
+        });
+
+        var form = document.getElementById('aptitude-form');
+        if (form) {
+            form.addEventListener('submit', function() {
+                clearInterval(aptInterval);
+            });
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAptitudeAssessment);
+    } else {
+        initAptitudeAssessment();
+    }
+})();
+</script>
+{% endblock %}

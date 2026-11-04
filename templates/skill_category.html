@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Skill Categorization{% endblock %}
+{% block page_title %}Technical Domain &amp; Skill Categorization{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">&#x1F3F7;&#xFE0F; Technical Domain &amp; Skill Categorization</h1>
+        <p class="page-subtitle">Automated domain alignment across industry technical tracks based on resume analysis.</p>
+    </div>
+</div>
+
+<!-- Primary Classification Hero Card -->
+<div class="card" style="margin-bottom: 28px; background: linear-gradient(135deg, #1e293b, #0f172a); color: white;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+        <div>
+            <span class="badge" style="background: rgba(59, 130, 246, 0.3); color: #93c5fd; margin-bottom: 12px; border: 1px solid rgba(59, 130, 246, 0.4);">
+                Primary Predicted Career Track
+            </span>
+            <h2 style="font-size: 26px; color: white; margin-bottom: 6px;">
+                {{ predicted_cat }}
+            </h2>
+            <div style="font-size: 14px; color: #cbd5e1;">
+                Statistical Confidence Estimate: <strong>{{ (confidence * 100) | round(1) }}%</strong>
+            </div>
+            <div style="margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap;">
+                <span class="badge badge-approved">&#x2713; Track Verified</span>
+                <span class="badge badge-primary">High Relevance Score</span>
+            </div>
+        </div>
+        <div style="text-align: right;">
+            <a href="{{ url_for('assessments.interview', category=predicted_cat) }}" class="btn btn-primary btn-lg">
+                &#x1F3AF; Launch Tailored Interview &rarr;
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-2">
+    <!-- Left: Detected Supporting Skills -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">&#x1F6E0;&#xFE0F; Supporting Technical Proficiencies</div>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+            The classifier correlated the following detected keywords to determine your primary career track:
+        </p>
+
+        {% if user_skills %}
+        <div class="skill-tags-wrap">
+            {% for s in user_skills %}
+            <span class="skill-tag accent">
+                {{ s.skill_name }}
+            </span>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="font-size: 13px; color: var(--text-muted);">No skills detected in your resume yet.</p>
+        {% endif %}
+    </div>
+
+    <!-- Right: All 6 Supported Career Tracks -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">&#x1F4DA; Supported Career Tracks (SCAP Taxonomy)</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            {% for cat in categories %}
+            {% if cat.category_name == predicted_cat %}
+                {% set cat_border = 'var(--primary)' %}
+                {% set cat_bg = '#eff6ff' %}
+                {% set cat_color = 'var(--primary)' %}
+            {% else %}
+                {% set cat_border = 'var(--border)' %}
+                {% set cat_bg = '#f8fafc' %}
+                {% set cat_color = 'var(--text-main)' %}
+            {% endif %}
+{% set cat_class = 'cat-card-selected' if cat.category_name == predicted_cat else 'cat-card-default' %}
+            <div class="{{ cat_class }}" style="padding: 12px; border-radius: var(--radius-sm);">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div class="cat-title">
+                        {{ cat.category_name }}
+                        {% if cat.category_name == predicted_cat %}
+                        <span class="badge badge-primary" style="margin-left: 6px; font-size: 10px;">Your Match</span>
+                        {% endif %}
+                    </div>
+                    <a href="{{ url_for('assessments.interview', category=cat.category_name) }}" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 8px;">
+                        Interview Bank
+                    </a>
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+                    {{ cat.description }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

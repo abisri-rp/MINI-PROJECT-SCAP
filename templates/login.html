@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign In{% endblock %}
+
+{% block content %}
+<div style="max-width: 440px; margin: 40px auto;">
+    <div class="card" style="box-shadow: var(--shadow-lg);">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <div class="sidebar-logo-icon" style="margin: 0 auto 12px; width: 48px; height: 48px; font-size: 22px;">S</div>
+            <h2 style="font-size: 22px; font-weight: 800;">Welcome to SCAP</h2>
+            <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">
+                Sign in to your candidate or administrator portal
+            </p>
+        </div>
+
+        <form method="POST" action="{{ url_for('auth.login') }}" id="login-form" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            
+            <div class="form-group">
+                <label class="form-label" for="login-email">Email Address</label>
+                <input type="email" id="login-email" name="email" class="form-control {% if email_error %}input-error{% endif %}" placeholder="name@scap.edu" value="{{ email or '' }}" required autofocus>
+                <div id="email-error" class="field-error-msg" style="color: var(--danger); font-size: 12px; margin-top: 4px; font-weight: 600; min-height: 16px;">
+                    {% if email_error %}{{ email_error }}{% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label class="form-label" for="login-password" style="margin-bottom: 0;">Password</label>
+                    <a href="{{ url_for('auth.forgot_password') }}" style="color: var(--primary); font-size: 12px; font-weight: 600; text-decoration: none;">
+                        Forgot Password?
+                    </a>
+                </div>
+                <input type="password" id="login-password" name="password" class="form-control {% if password_error %}input-error{% endif %}" placeholder="••••••••" required style="margin-top: 6px;">
+                <div id="password-error" class="field-error-msg" style="color: var(--danger); font-size: 12px; margin-top: 4px; font-weight: 600; min-height: 16px;">
+                    {% if password_error %}{{ password_error }}{% endif %}
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button type="reset" id="login-reset-btn" class="btn btn-secondary" style="flex: 1; padding: 11px;">
+                    Reset
+                </button>
+                <button type="submit" id="login-submit-btn" class="btn btn-primary" style="flex: 2; padding: 11px; font-size: 15px;">
+                    Sign In
+                </button>
+            </div>
+        </form>
+
+        <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border); text-align: center; font-size: 13px; color: var(--text-muted);">
+            Don't have an account yet? 
+            <a href="{{ url_for('auth.register') }}" style="color: var(--primary); font-weight: 600; text-decoration: none;">
+                Register here
+            </a>
+            • 
+            <a href="{{ url_for('auth.forgot_password') }}" style="color: var(--primary); font-weight: 600; text-decoration: none;">
+                Forgot Password
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Demo Accounts Box for Evaluators -->
+    <div class="card" style="margin-top: 18px; background: #f8fafc; border-style: dashed;">
+        <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 8px;">
+            ⚡ Quick-Fill Evaluator Credentials
+        </div>
+        <div style="display: flex; gap: 8px; flex-direction: column;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="fillCredentials('admin@scap.edu', 'Admin@SCAP2026')" style="justify-content: space-between;">
+                <span>👑 <strong>Administrator Account</strong> (admin@scap.edu)</span>
+                <span style="color: var(--primary);">Auto-Fill</span>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

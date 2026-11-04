@@ -1,0 +1,314 @@
+{% extends 'base.html' %}
+
+{% block title %}Candidate Profile{% endblock %}
+{% block page_title %}Candidate Profile Details &amp; Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">👤 Candidate Profile Details</h1>
+        <p class="page-subtitle">Manage your verified academic credentials, technical proficiencies, work experiences,
+            and project portfolio.</p>
+    </div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <a href="{{ url_for('user.populate_from_resume') }}" class="btn btn-secondary btn-sm"
+            title="Import fields extracted from your active resume">
+            📥 Auto-Fill from Uploaded Resume
+        </a>
+        <a href="{{ url_for('user.generate_resume') }}" class="btn btn-primary btn-sm">
+            ✨ Generate Clean Resume →
+        </a>
+    </div>
+</div>
+
+<!-- Two-Choice Setup Navigation Header -->
+<div class="card" style="padding: 14px; margin-bottom: 24px; background: #f8fafc;">
+    <div style="display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+        <div style="font-size: 13px; font-weight: 700; color: var(--text-muted);">
+            SETUP OPTIONS:
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="{{ url_for('resume.upload') }}" class="btn btn-secondary btn-sm">
+                📄 Choice 1: Upload Resume File
+            </a>
+            <span class="btn btn-primary btn-sm" style="cursor: default;">
+                ✍️ Choice 2: Manual Profile Form (Active)
+            </span>
+            <a href="{{ url_for('user.generate_resume') }}" class="btn btn-secondary btn-sm"
+                style="border-color: #cbd5e1;">
+                ✨ Generate Resume Output
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Comprehensive Profile Form -->
+<div class="card" style="margin-bottom: 28px;">
+    <div class="card-header">
+        <div class="card-title">&#x1F4DD; Candidate Profile &amp; Professional Information</div>
+        <span class="badge badge-primary">Form Processing Enabled</span>
+    </div>
+
+    <form method="POST" action="{{ url_for('user.profile') }}" id="candidate-profile-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        <div
+            style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary); margin-bottom: 12px;">
+            1. Personal &amp; Contact Information
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="prof-name">Full Name *</label>
+                <input type="text" id="prof-name" name="full_name" class="form-control" value="{{ user.full_name }}"
+                    required placeholder="e.g. Alex Johnson">
+                <span class="field-hint" style="font-size: 11px; color: var(--text-muted); display: none;">Your legal or
+                    preferred professional name.</span>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="prof-email">Email Address</label>
+                <input type="email" id="prof-email" class="form-control" value="{{ user.email }}" disabled
+                    style="background: #f1f5f9; cursor: not-allowed;">
+                <span style="font-size: 11px; color: var(--text-muted);">System account identifier.</span>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="prof-phone">Phone Number</label>
+                <input type="text" id="prof-phone" name="phone" class="form-control" value="{{ user.phone or '' }}"
+                    placeholder="+1 (555) 019-2834">
+                <span class="field-hint" style="font-size: 11px; color: var(--text-muted); display: none;">Include
+                    country or area code.</span>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="prof-linkedin">LinkedIn Profile URL</label>
+                <input type="url" id="prof-linkedin" name="linkedin_url" class="form-control"
+                    value="{{ user.linkedin_url or '' }}" placeholder="https://linkedin.com/in/username">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="prof-github">GitHub / Portfolio URL</label>
+                <input type="url" id="prof-github" name="github_url" class="form-control"
+                    value="{{ user.github_url or '' }}" placeholder="https://github.com/username">
+            </div>
+        </div>
+
+        <div
+            style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary); margin-bottom: 12px; padding-top: 14px; border-top: 1px solid var(--border);">
+            2. Academic Background &amp; Education
+        </div>
+
+        <div style="display: grid; grid-template-columns: 2fr 2fr 1fr; gap: 16px; margin-bottom: 24px;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="prof-degree">Degree & Major</label>
+                <input type="text" id="prof-degree" name="degree" class="form-control" value="{{ user.degree or '' }}"
+                    placeholder="e.g. B.Tech in Computer Science and Engineering">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="prof-institution">University / College</label>
+                <input type="text" id="prof-institution" name="institution" class="form-control"
+                    value="{{ user.institution or '' }}" placeholder="e.g. State Institute of Technology">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="prof-grad-year">Graduation Year</label>
+                <input type="text" id="prof-grad-year" name="graduation_year" class="form-control"
+                    value="{{ user.graduation_year or '' }}" placeholder="e.g. 2026">
+            </div>
+        </div>
+
+        <div
+            style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary); margin-bottom: 12px; padding-top: 14px; border-top: 1px solid var(--border);">
+            3. Technical Skills &amp; Proficiencies
+        </div>
+
+        <div class="form-group" style="margin-bottom: 24px;">
+            <label class="form-label" for="prof-skills">Technical Skills (Comma-separated)</label>
+            <textarea id="prof-skills" name="skills" class="form-control" rows="2"
+                placeholder="e.g. C, Java, Python, SQL, C++, React, Node.js, Git, Docker, Machine Learning">{{ user.skills or '' }}</textarea>
+            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+                💡 Group key languages first (e.g., C, Java, Python). These will be reflected in administrative skill
+                directories.
+            </span>
+        </div>
+
+        <div
+            style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary); margin-bottom: 12px; padding-top: 14px; border-top: 1px solid var(--border);">
+            4. Languages Known &amp; Area of Interest
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="prof-languages">Languages Known</label>
+                <input type="text" id="prof-languages" name="languages_known" class="form-control"
+                    value="{{ user.languages_known or '' }}" placeholder="e.g. English, Tamil, Hindi, Spanish, French">
+                <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+                    Natural / spoken communication languages (e.g. English, Tamil, Hindi).
+                </span>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="prof-area-interest">Area of Interest</label>
+                <input type="text" id="prof-area-interest" name="area_of_interest" class="form-control"
+                    value="{{ user.area_of_interest or '' }}"
+                    placeholder="e.g. Artificial Intelligence, Cloud Computing, Full-Stack Web Development, Cyber Security">
+                <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+                    Core engineering interest domains and technical target areas.
+                </span>
+            </div>
+        </div>
+
+        <div
+            style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary); margin-bottom: 12px; padding-top: 14px; border-top: 1px solid var(--border);">
+            5. Projects, Practical Experience &amp; Summary
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="prof-bio">Professional Summary / Bio</label>
+            <textarea id="prof-bio" name="bio" class="form-control" rows="2"
+                placeholder="Brief technical summary outlining your engineering focus and career goals...">{{ user.bio or '' }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="prof-projects">Academic &amp; Personal Projects</label>
+            <textarea id="prof-projects" name="projects" class="form-control" rows="3"
+                placeholder="Describe 2-3 notable projects with technologies used, architecture, and achievements...">{{ user.projects or '' }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="prof-experience">Internships &amp; Work Experience</label>
+            <textarea id="prof-experience" name="experience" class="form-control" rows="3"
+                placeholder="List any internships, engineering roles, freelance work, or open-source contributions...">{{ user.experience or '' }}</textarea>
+        </div>
+
+        <div
+            style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border);">
+            <button type="reset" id="prof-reset-btn" class="btn btn-secondary" style="padding: 10px 20px;">
+                ↺ Reset Changes
+            </button>
+            <button type="submit" id="prof-submit-btn" class="btn btn-primary" style="padding: 10px 28px;">
+                💾 Save Profile Details
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Uploaded Resume Archives Table -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">&#x1F4DA; Uploaded Resume Archives</div>
+        <a href="{{ url_for('resume.upload') }}" class="btn btn-primary btn-sm">+ Upload New Resume</a>
+    </div>
+    {% if resumes %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Version</th>
+                    <th>Filename</th>
+                    <th>Uploaded Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in resumes %}
+                <tr>
+                    <td><strong>v{{ r.version_number }}</strong></td>
+                    <td>📄 {{ r.filename }}</td>
+                    <td>{{ r.uploaded_at }}</td>
+                    <td>
+                        {% if r.is_active == 1 %}
+                        <span class="badge badge-approved">Active</span>
+                        {% else %}
+                        <span class="badge badge-neutral">Previous</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('resume.analysis', resume_id=r.resume_id) }}"
+                            class="btn btn-secondary btn-sm" style="font-size: 11px;">
+                            View Analysis
+                        </a>
+                        <a href="{{ url_for('user.generate_resume') }}" class="btn btn-primary btn-sm"
+                            style="font-size: 11px;">
+                            Generate Resume
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="font-size: 13px; color: var(--text-muted); text-align: center; padding: 24px;">No uploaded resumes yet.
+        You can upload a PDF or DOCX file or generate one from the profile above.</p>
+    {% endif %}
+</div>
+
+<!-- Form Processing: focus, blur, submit, reset (Pure Vanilla JS) -->
+<script>
+    (function () {
+        function initProfileForm() {
+            var form = document.getElementById('candidate-profile-form');
+            if (!form) return;
+
+            var inputs = form.querySelectorAll('input, textarea');
+            inputs.forEach(function (input) {
+                // FOCUS: Highlight active container and reveal helper hint
+                input.addEventListener('focus', function () {
+                    this.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.25)';
+                    this.style.borderColor = 'var(--primary)';
+                    var hint = this.parentElement.querySelector('.field-hint');
+                    if (hint) hint.style.display = 'block';
+                });
+
+                // BLUR: Validate field & reset active glow
+                input.addEventListener('blur', function () {
+                    this.style.boxShadow = '';
+                    var val = this.value.trim();
+                    if (this.required && !val) {
+                        this.style.borderColor = 'var(--danger)';
+                    } else {
+                        this.style.borderColor = '';
+                    }
+                    var hint = this.parentElement.querySelector('.field-hint');
+                    if (hint) hint.style.display = 'none';
+                });
+            });
+
+            // RESET: Restore default styles
+            var resetBtn = document.getElementById('prof-reset-btn');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function () {
+                    inputs.forEach(function (inp) {
+                        inp.style.borderColor = '';
+                        inp.style.boxShadow = '';
+                    });
+                    form.querySelectorAll('.field-hint').forEach(function (h) {
+                        h.style.display = 'none';
+                    });
+                });
+            }
+
+            // SUBMIT: Button animation & prevent duplicate submit
+            form.addEventListener('submit', function () {
+                var btn = document.getElementById('prof-submit-btn');
+                if (btn) {
+                    btn.innerHTML = '⏳ Saving Details...';
+                    btn.disabled = true;
+                }
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initProfileForm);
+        } else {
+            initProfileForm();
+        }
+    })();
+</script>
+{% endblock %}

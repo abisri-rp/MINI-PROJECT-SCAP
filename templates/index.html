@@ -1,0 +1,403 @@
+{% extends 'base.html' %}
+
+{% block title %}Welcome to SCAP | Strategic Career Advancement Platform{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Keyframe Animations */
+@keyframes floatBlob {
+    0%, 100% {
+        transform: translate(0px, 0px) scale(1);
+    }
+    33% {
+        transform: translate(30px, -50px) scale(1.1);
+    }
+    66% {
+        transform: translate(-25px, 20px) scale(0.95);
+    }
+}
+
+@keyframes pulseBeacon {
+    0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+        transform: scale(0.95);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+        transform: scale(1.1);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+        transform: scale(0.95);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(32px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes shimmerSweep {
+    0% {
+        transform: translateX(-150%);
+    }
+    100% {
+        transform: translateX(150%);
+    }
+}
+
+/* Landing Page Hero Overrides */
+.landing-hero-animated {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 80px 24px 60px;
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 20%, #1e1b4b 0%, #0f172a 60%, #090d16 100%);
+    color: white;
+    text-align: center;
+}
+
+/* Ambient Floating Glowing Orbs */
+.orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.orb-1 {
+    width: 450px;
+    height: 450px;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    top: -100px;
+    left: -100px;
+    animation: floatBlob 12s ease-in-out infinite;
+}
+
+.orb-2 {
+    width: 400px;
+    height: 400px;
+    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+    bottom: -80px;
+    right: -80px;
+    animation: floatBlob 15s ease-in-out infinite reverse;
+}
+
+.orb-3 {
+    width: 320px;
+    height: 320px;
+    background: linear-gradient(135deg, #06b6d4, #10b981);
+    top: 40%;
+    left: 60%;
+    animation: floatBlob 18s ease-in-out infinite 2s;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 1080px;
+    margin: 0 auto;
+}
+
+.live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #e2e8f0;
+    margin-bottom: 24px;
+    backdrop-filter: blur(12px);
+    animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.beacon-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #10b981;
+    animation: pulseBeacon 2s infinite;
+}
+
+.hero-title {
+    font-size: clamp(34px, 5.5vw, 56px);
+    font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: -0.035em;
+    margin: 0 auto 20px;
+    max-width: 950px;
+    background: linear-gradient(135deg, #ffffff 20%, #93c5fd 55%, #c084fc 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: fadeInUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) both 0.1s;
+}
+
+.hero-subtitle {
+    font-size: clamp(16px, 2vw, 19px);
+    color: #94a3b8;
+    line-height: 1.65;
+    max-width: 760px;
+    margin: 0 auto 36px;
+    font-weight: 400;
+    animation: fadeInUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) both 0.2s;
+}
+
+.hero-cta-group {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 50px;
+    animation: fadeInUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) both 0.3s;
+}
+
+.btn-animated-primary {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 14px 30px;
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.btn-animated-primary:hover {
+    color: white;
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 14px 32px rgba(37, 99, 235, 0.5);
+}
+
+.btn-animated-primary::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transform: skewX(-25deg);
+    animation: shimmerSweep 3.5s infinite;
+}
+
+.btn-animated-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: #f8fafc;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 14px 30px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.btn-animated-secondary:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+    transform: translateY(-3px) scale(1.02);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}
+
+/* Feature Cards Grid */
+.hero-features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 20px;
+    max-width: 1040px;
+    margin: 0 auto;
+    animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) both 0.4s;
+}
+
+.animated-feature-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 24px 20px;
+    text-align: left;
+    backdrop-filter: blur(12px);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+}
+
+.animated-feature-card:hover {
+    transform: translateY(-6px);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(147, 197, 253, 0.4);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.4);
+}
+
+.card-icon-bubble {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin-bottom: 14px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    transition: transform 0.3s ease;
+}
+
+.animated-feature-card:hover .card-icon-bubble {
+    transform: scale(1.1) rotate(4deg);
+}
+
+.card-title-text {
+    font-size: 16px;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 6px;
+}
+
+.card-desc-text {
+    font-size: 13px;
+    color: #94a3b8;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Floating Metrics Bar */
+.metrics-strip {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 36px;
+    flex-wrap: wrap;
+    margin-top: 48px;
+    padding-top: 28px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) both 0.5s;
+}
+
+.metric-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #cbd5e1;
+}
+
+.metric-pill-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #38bdf8;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin: -32px;">
+    <!-- Animated Hero Section -->
+    <section class="landing-hero-animated">
+        <!-- Ambient Glowing Background Elements -->
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+
+        <div class="hero-content">
+            <!-- Live Status Beacon -->
+            <div class="live-badge">
+                <span class="beacon-dot"></span>
+                <span>Intelligent Career Advancement Platform</span>
+            </div>
+
+            <!-- Dynamic Headline -->
+            <h1 class="hero-title">STRATEGIC CAREER ADVANCEMENT PLATFORM</h1>
+
+            <!-- Subtitle -->
+            <p class="hero-subtitle">
+                An intelligent, closed-loop career ecosystem powered by Relational Database Architecture,
+                Automated NLP Resume Parsing, 5-Factor Quality Scoring, and Tailored Technical Mock Assessments.
+            </p>
+
+            <!-- Interactive Animated CTA Buttons -->
+            <div class="hero-cta-group">
+                <a href="{{ url_for('auth.login') }}" class="btn-animated-primary">
+                    <span>🔐 Access Candidate Login</span>
+                    <span>→</span>
+                </a>
+                <a href="{{ url_for('auth.register') }}" class="btn-animated-secondary">
+                    <span>✨ Create Free Account</span>
+                </a>
+            </div>
+
+            <!-- Interactive Animated Feature Cards -->
+            <div class="hero-features-grid">
+                <div class="animated-feature-card">
+                    <div class="card-icon-bubble">📄</div>
+                    <div class="card-title-text">NLP Resume Extraction</div>
+                    <p class="card-desc-text">Deep semantic parsing of education, skills, and projects with format validation.</p>
+                </div>
+
+                <div class="animated-feature-card">
+                    <div class="card-icon-bubble">📊</div>
+                    <div class="card-title-text">5-Factor Quality Scoring</div>
+                    <p class="card-desc-text">Comprehensive evaluation across completeness, depth, verbs, and readability.</p>
+                </div>
+
+                <div class="animated-feature-card">
+                    <div class="card-icon-bubble">🎯</div>
+                    <div class="card-title-text">Technical Domain Mapping</div>
+                    <p class="card-desc-text">Automated classification into Software, Data, Cloud, and Engineering tracks.</p>
+                </div>
+
+                <div class="animated-feature-card">
+                    <div class="card-icon-bubble">⚡</div>
+                    <div class="card-title-text">Adaptive Assessments</div>
+                    <p class="card-desc-text">Interactive mock interviews and timed quantitative, logical, and verbal tests.</p>
+                </div>
+            </div>
+
+            <!-- Metrics Strip -->
+            <div class="metrics-strip">
+                <div class="metric-pill">
+                    <span class="metric-pill-dot"></span>
+                    <span>Zero-Trust Resume Verification</span>
+                </div>
+                <div class="metric-pill">
+                    <span class="metric-pill-dot" style="background-color: #a855f7;"></span>
+                    <span>Real-Time Feedback Suggestions</span>
+                </div>
+                <div class="metric-pill">
+                    <span class="metric-pill-dot" style="background-color: #10b981;"></span>
+                    <span>Closed-Loop Progress Tracking</span>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

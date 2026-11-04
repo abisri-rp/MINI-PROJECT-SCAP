@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Resume Review Queue{% endblock %}
+{% block page_title %}Faculty Resume Review Queue{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">📝 Faculty Review Queue</h1>
+        <p class="page-subtitle">Inspect candidate resume extractions, verify ML classifications, and issue guidance feedback.</p>
+    </div>
+</div>
+
+<div class="card">
+    {% if reviews %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Review ID</th>
+                    <th>Candidate</th>
+                    <th>Resume File</th>
+                    <th>Version</th>
+                    <th>Uploaded Date</th>
+                    <th>Quality Score</th>
+                    <th>Predicted Track</th>
+                    <th>Current Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in reviews %}
+                <tr>
+                    <td><strong>#{{ r.review_id }}</strong></td>
+                    <td>
+                        <div><strong>{{ r.candidate_name }}</strong></div>
+                        <div style="font-size: 11px; color: var(--text-muted);">{{ r.candidate_email }}</div>
+                    </td>
+                    <td>
+                        <div>📄 {{ r.filename }}</div>
+                        <a href="{{ url_for('admin.view_resume', resume_id=r.resume_id) }}" target="_blank" style="font-size: 11px; color: var(--primary); font-weight: 600; text-decoration: none;">
+                            👁️ Open Resume
+                        </a>
+                    </td>
+                    <td>v{{ r.version_number }}</td>
+                    <td>{{ r.uploaded_at }}</td>
+                    <td><strong style="color: var(--primary);">{{ r.total_score }}</strong>/100</td>
+                    <td><span class="badge badge-primary">{{ r.predicted_category }}</span></td>
+                    <td>
+                        <span class="badge {% if r.review_status == 'Approved' %}badge-approved{% elif r.review_status == 'Improvement Required' %}badge-improvement{% else %}badge-pending{% endif %}">
+                            {{ r.review_status }}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 6px;">
+                            <a href="{{ url_for('admin.view_resume', resume_id=r.resume_id) }}" target="_blank" class="btn btn-secondary btn-sm" title="View uploaded document">
+                                👁️ File
+                            </a>
+                            <a href="{{ url_for('admin.review_resume', review_id=r.review_id) }}" class="btn btn-primary btn-sm">
+                                Review →
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="font-size: 14px; color: var(--text-muted); text-align: center; padding: 32px 0;">
+        No resume review requests available.
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

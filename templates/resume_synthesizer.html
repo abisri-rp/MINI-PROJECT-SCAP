@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}Resume Synthesizer{% endblock %}
+{% block page_title %}Resume Synthesizer & Bullet Point Rewriter{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">✨ Career Bullet Point Enhancer</h1>
+        <p class="page-subtitle">Refactor passive descriptions into active engineering accomplishments while preserving 100% factual truth.</p>
+    </div>
+    <div>
+        <a href="{{ url_for('resume.analysis', resume_id=resume.resume_id) }}" class="btn btn-secondary btn-sm">
+            ← Back to Analysis
+        </a>
+    </div>
+</div>
+
+<!-- Guardrails Info Banner -->
+<div class="card" style="margin-bottom: 24px; background: #f0fdf4; border-color: #bbf7d0;">
+    <div style="display: flex; gap: 14px; align-items: flex-start;">
+        <span style="font-size: 24px;">🛡️</span>
+        <div>
+            <div style="font-size: 14px; font-weight: 700; color: #166534;">Factual Integrity & Ethical AI Guardrails Active</div>
+            <p style="font-size: 13px; color: #15803d; margin-top: 4px; line-height: 1.5;">
+                The rewriter strictly clarifies technical intent and emphasizes high-impact action verbs 
+                (<em>Developed, Implemented, Designed, Automated, Optimized, Analyzed</em>). 
+                It <strong>never hallucinates fake metrics, percentages, tools, or fabricated responsibilities</strong>.
+            </p>
+        </div>
+    </div>
+</div>
+
+{% if suggestions %}
+<div style="display: flex; flex-direction: column; gap: 18px;">
+    {% for s in suggestions %}
+    <div class="synthesizer-card" id="sugg-card-{{ s.suggestion_id }}">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="badge badge-primary">Action Verb: {{ s.action_verb }}</span>
+                <span class="badge {% if s.status == 'ACCEPTED' %}badge-approved{% elif s.status == 'REJECTED' %}badge-improvement{% elif s.status == 'EDITED' %}badge-primary{% else %}badge-neutral{% endif %}">
+                    Status: {{ s.status }}
+                </span>
+            </div>
+            <span style="font-size: 12px; color: var(--text-muted);">Suggestion #{{ loop.index }}</span>
+        </div>
+
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 4px;">
+            Original Description:
+        </div>
+        <div class="bullet-original">
+            "{{ s.original_text }}"
+        </div>
+
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #15803d; margin-bottom: 4px;">
+            Synthesized Enhancement:
+        </div>
+        <div class="bullet-revised">
+            "{{ s.user_final_text if s.status == 'EDITED' and s.user_final_text else s.suggested_text }}"
+        </div>
+
+        <div class="synthesizer-explanation">
+            <strong>Why this improves your resume:</strong> {{ s.explanation }}
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <!-- Accept Form -->
+            <form method="POST" action="{{ url_for('resume.synthesizer_action') }}" style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="suggestion_id" value="{{ s.suggestion_id }}">
+                <input type="hidden" name="action" value="accept">
+                <button type="submit" class="btn btn-success btn-sm" {% if s.status == 'ACCEPTED' %}disabled style="opacity: 0.6;"{% endif %}>
+                    ✓ Accept Suggestion
+                </button>
+            </form>
+
+            <!-- Reject Form -->
+            <form method="POST" action="{{ url_for('resume.synthesizer_action') }}" style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="suggestion_id" value="{{ s.suggestion_id }}">
+                <input type="hidden" name="action" value="reject">
+                <button type="submit" class="btn btn-secondary btn-sm" {% if s.status == 'REJECTED' %}disabled style="opacity: 0.6;"{% endif %}>
+                    ✕ Keep Original
+                </button>
+            </form>
+
+            <!-- Edit Manually Toggle -->
+            <button type="button" class="btn btn-secondary btn-sm" onclick="toggleEditBox('{{ s.suggestion_id }}')">
+                ✏️ Edit Manually
+            </button>
+        </div>
+
+        <!-- Inline Manual Edit Box -->
+        <div id="edit-box-{{ s.suggestion_id }}" style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border);">
+            <form method="POST" action="{{ url_for('resume.synthesizer_action') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="suggestion_id" value="{{ s.suggestion_id }}">
+                <input type="hidden" name="action" value="edit">
+                
+                <label class="form-label" style="font-size: 12px;">Customize Revised Bullet Point:</label>
+                <textarea name="user_final_text" class="form-control" rows="2" style="margin-bottom: 8px;">{{ s.user_final_text if s.user_final_text else s.suggested_text }}</textarea>
+                
+                <div style="display: flex; gap: 8px;">
+                    <button type="submit" class="btn btn-primary btn-sm">Save Custom Revision</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="toggleEditBox('{{ s.suggestion_id }}')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card" style="text-align: center; padding: 48px 24px;">
+    <div style="font-size: 36px; margin-bottom: 12px;">📝</div>
+    <h3 style="font-size: 18px; margin-bottom: 6px;">No bullet points detected for synthesis</h3>
+    <p style="color: var(--text-muted); font-size: 14px; max-width: 500px; margin: 0 auto 18px;">
+        Upload a resume with project descriptions or work experience bullets to generate synthesized suggestions.
+    </p>
+    <a href="{{ url_for('resume.upload') }}" class="btn btn-primary btn-sm">
+        Upload New Resume
+    </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function toggleEditBox(id) {
+    const box = document.getElementById('edit-box-' + id);
+    if (box) {
+        box.style.display = (box.style.display === 'none' || !box.style.display) ? 'block' : 'none';
+    }
+}
+</script>
+{% endblock %}

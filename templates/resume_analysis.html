@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+
+{% block title %}Resume Analysis{% endblock %}
+{% block page_title %}Resume Quality & NLP Extraction Report{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Resume Analysis: {{ resume.filename }}</h1>
+        <p class="page-subtitle">Version {{ resume.version_number }} • Uploaded {{ resume.uploaded_at }}</p>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+        {% if all_resumes and all_resumes|length > 1 %}
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 500;">Version:</span>
+        <select class="form-control" style="width: auto; padding: 6px 12px; font-size: 13px;" onchange="location = this.value;">
+            {% for r in all_resumes %}
+            <option value="{{ url_for('resume.analysis', resume_id=r.resume_id) }}" {% if r.resume_id == resume.resume_id %}selected{% endif %}>
+                v{{ r.version_number }} ({{ r.filename }})
+            </option>
+            {% endfor %}
+        </select>
+        {% endif %}
+        <a href="{{ url_for('user.generate_resume') }}" class="btn btn-primary">
+            ✨ Generate Clean Resume
+        </a>
+    </div>
+</div>
+
+{% if extracted.get('is_valid_resume') is sameas false or not analysis.total_score or analysis.total_score == 0 or analysis.predicted_category in ['Not a Resume', 'Not Classified (Not a Resume)', 'Unclassified', 'None', ''] or (extracted.get('error') is not none and extracted.get('error') != '') %}
+<div class="card" style="margin-bottom: 28px; background: #fff1f2; border: 2px solid #fda4af; padding: 24px;">
+    <div style="display: flex; align-items: flex-start; gap: 16px;">
+        <span style="font-size: 32px;">⚠️</span>
+        <div>
+            <h2 style="font-size: 20px; font-weight: 800; color: #9f1239; margin-bottom: 8px;">
+                Invalid Document: File Uploaded is Not in Resume Format
+            </h2>
+            <p style="font-size: 14px; color: #be123c; margin-bottom: 14px; line-height: 1.6;">
+                The uploaded document does not match a standard candidate resume format. It lacks essential sections such as contact details, education, technical skills, and experience or projects.
+            </p>
+            <div style="background: rgba(255,255,255,0.85); border-radius: 8px; padding: 14px 18px; margin-bottom: 16px; border: 1px solid #fecdd3; display: flex; flex-direction: column; gap: 6px;">
+                <div style="font-size: 14px; font-weight: 700; color: #881337;">
+                    🚫 Quality Score: <span style="font-weight: 600; color: #be123c;">Not Given (Quality scoring is disabled for non-resume documents)</span>
+                </div>
+                <div style="font-size: 14px; font-weight: 700; color: #881337;">
+                    🚫 Domain Prediction: <span style="font-weight: 600; color: #be123c;">None (Technical domain prediction suspended)</span>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <a href="{{ url_for('resume.upload') }}" class="btn btn-primary btn-sm">
+                    📤 Upload a Valid Resume File (PDF / DOCX)
+                </a>
+                <a href="{{ url_for('user.profile') }}" class="btn btn-secondary btn-sm">
+                    ✍️ Enter Profile Details Manually
+                </a>
+                <a href="{{ url_for('user.generate_resume') }}" class="btn btn-secondary btn-sm">
+                    ✨ Generate Clean Resume
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<!-- Score Hero Box for Valid Resumes -->
+<div class="score-hero-box" style="margin-bottom: 28px;">
+    <div>
+        <span class="badge" style="background: rgba(255,255,255,0.2); color: white; margin-bottom: 12px;">
+            Advisory Quality Evaluation
+        </span>
+        <h2 style="font-size: 26px; color: white; margin-bottom: 8px;">
+            Overall Resume Quality: {{ analysis.total_score }}/100
+        </h2>
+        <p style="color: #cbd5e1; font-size: 14px; max-width: 600px;">
+            Predicted Domain: <strong>{{ analysis.predicted_category }}</strong> 
+            (Confidence: {{ (analysis.confidence_score * 100) | round(1) }}%).
+            Review individual component scores below for actionable career refinement.
+        </p>
+        <div style="margin-top: 14px; font-size: 12px; color: #94a3b8; font-style: italic;">
+            * {{ feedback.disclaimer }}
+        </div>
+    </div>
+    <div class="score-circle">
+        <div class="score-num">{{ analysis.total_score | int }}</div>
+        <div class="score-out-of">Score / 100</div>
+    </div>
+</div>
+{% endif %}
+
+<div class="grid grid-cols-2" style="margin-bottom: 28px;">
+    <!-- Left Column: Component Scores & Suggestions -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">📈 Component Score Breakdown (20 Pts Each)</div>
+        </div>
+
+        {% if extracted.get('is_valid_resume') is sameas false or not analysis.total_score or analysis.total_score == 0 or analysis.predicted_category in ['Not a Resume', 'Not Classified (Not a Resume)', 'Unclassified', 'None', ''] or (extracted.get('error') is not none and extracted.get('error') != '') %}
+        <div style="padding: 24px 16px; background: #f8fafc; border-radius: 6px; border: 1px dashed #cbd5e1; text-align: center; color: var(--text-muted); font-size: 13px;">
+            ⚠️ Component score breakdown is disabled. Quality scores are only calculated for valid resumes.
+        </div>
+        {% else %}
+        <div class="progress-container">
+            <div class="progress-header">
+                <span>1. Section Completeness</span>
+                <span><strong>{{ analysis.completeness_score }}</strong> / 20</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill js-bar-fill" data-width="{{ (analysis.completeness_score / 20.0) * 100 }}"></div></div>
+            
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-header">
+                <span>2. Technical Skills Breadth</span>
+                <span><strong>{{ analysis.skills_score }}</strong> / 20</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill js-bar-fill" data-width="{{ (analysis.skills_score / 20.0) * 100 }}"></div></div>
+            
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-header">
+                <span>3. Project Descriptions</span>
+                <span><strong>{{ analysis.projects_score }}</strong> / 20</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill js-bar-fill" data-width="{{ (analysis.projects_score / 20.0) * 100 }}"></div></div>
+            
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-header">
+                <span>4. Action Verbs & Metrics</span>
+                <span><strong>{{ analysis.verbs_score }}</strong> / 20</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill js-bar-fill" data-width="{{ (analysis.verbs_score / 20.0) * 100 }}"></div></div>
+
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-header">
+                <span>5. Readability & Formatting</span>
+                <span><strong>{{ analysis.readability_score }}</strong> / 20</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill js-bar-fill" data-width="{{ (analysis.readability_score / 20.0) * 100 }}"></div></div>
+            
+        </div>
+        {% endif %}
+
+        <!-- Recommendations -->
+        {% if feedback.suggestions %}
+        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border);">
+            <div style="font-size: 14px; font-weight: 700; color: #b45309; margin-bottom: 10px;">
+                💡 Improvement Opportunities:
+            </div>
+            <ul style="padding-left: 20px; font-size: 13px; color: var(--text-main); line-height: 1.7;">
+                {% for tip in feedback.suggestions %}
+                <li>{{ tip }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Identified Strengths -->
+        {% if feedback.strengths %}
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
+            <div style="font-size: 14px; font-weight: 700; color: #065f46; margin-bottom: 10px;">
+                ✅ Candidate Strengths Detected:
+            </div>
+            <ul style="padding-left: 20px; font-size: 13px; color: var(--text-main); line-height: 1.7;">
+                {% for str_point in feedback.strengths %}
+                <li>{{ str_point }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Right Column: Candidate Verification & Correction Form -->
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">✏️ Candidate Profile Verification & Corrections</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                    Review extracted fields below. Correct any parsing discrepancies and recalculate score.
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('resume.update_extracted_profile', analysis_id=analysis.analysis_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+            <div class="form-group">
+                <label class="form-label" for="field-name">Full Name</label>
+                <input type="text" id="field-name" name="full_name" class="form-control" value="{{ extracted.full_name or '' }}">
+            </div>
+
+            <div class="grid grid-cols-2" style="gap: 16px; margin-bottom: 16px;">
+                <div>
+                    <label class="form-label" for="field-email">Extracted Email</label>
+                    <input type="email" id="field-email" name="email" class="form-control" value="{{ extracted.email or '' }}">
+                </div>
+                <div>
+                    <label class="form-label" for="field-phone">Extracted Phone</label>
+                    <input type="text" id="field-phone" name="phone" class="form-control" value="{{ extracted.phone or '' }}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="field-skills">Detected Technical Skills (comma separated)</label>
+                <textarea id="field-skills" name="technical_skills" class="form-control" rows="2">{% if extracted.technical_skills %}{{ extracted.technical_skills | join(', ') }}{% endif %}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="field-education">Education Details</label>
+                <textarea id="field-education" name="education" class="form-control" rows="2">{{ extracted.education or '' }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="field-projects">Projects Overview</label>
+                <textarea id="field-projects" name="projects" class="form-control" rows="3">{{ extracted.projects or '' }}</textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                💾 Save Verified Profile & Recalculate Score
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

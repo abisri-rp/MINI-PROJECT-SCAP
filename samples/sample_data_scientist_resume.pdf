@@ -1,0 +1,42 @@
+%PDF-1.4
+1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
+2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj
+3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >> endobj
+5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj
+4 0 obj << /Length 600 >>
+stream
+BT
+/F1 16 Tf
+50 720 Td (DAVID K. CHEN - DATA SCIENTIST) Tj
+/F1 10 Tf
+0 -20 Td (Email: david.chen@university.edu | Phone: (555) 890-1234 | Chicago, IL) Tj
+/F1 12 Tf
+0 -30 Td (EDUCATION) Tj
+/F1 10 Tf
+0 -15 Td (M.S. in Data Analytics, Midwest University (2023 - 2025). GPA: 3.92) Tj
+/F1 12 Tf
+0 -30 Td (TECHNICAL SKILLS) Tj
+/F1 10 Tf
+0 -15 Td (Languages: Python, R, SQL | Libraries: Pandas, NumPy, Scikit-Learn, Matplotlib, Seaborn) Tj
+0 -15 Td (Tools & BI: Tableau, Power BI, PostgreSQL, BigQuery, Docker, Git) Tj
+/F1 12 Tf
+0 -30 Td (PROJECTS) Tj
+/F1 10 Tf
+0 -15 Td (Customer Churn Prediction Engine - Developed predictive machine learning models in Python.) Tj
+0 -15 Td (Automated ETL pipeline using Pandas and SQL queries to clean 100,000+ customer records.) Tj
+0 -15 Td (Optimized model accuracy to 88% using Random Forest and evaluated using ROC-AUC.) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000300 00000 n 
+0000000228 00000 n 
+trailer << /Size 6 /Root 1 0 R >>
+startxref
+960
+%%EOF

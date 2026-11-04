@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+
+{% block title %}Generated Resume - {{ user.full_name }}{% endblock %}
+{% block page_title %}Verified Candidate Resume Generator{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Print Stylesheet for ATS-Compliant Resume Output */
+@media print {
+    /* Hide navigation, sidebar, top navbar, action buttons, and live edit controls */
+    .sidebar, .top-navbar, .action-bar-container, .db-pill, .alert, .resume-quick-controls {
+        display: none !important;
+    }
+    .main-wrapper {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .main-content {
+        padding: 0 !important;
+    }
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        font-size: 11pt !important;
+    }
+    .resume-sheet {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+    }
+}
+
+.resume-sheet {
+    background: #ffffff;
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 44px 50px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
+    color: #1e293b;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.resume-name {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+}
+
+.resume-contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid #0f172a;
+}
+
+.resume-section-title {
+    font-size: 14px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #0f172a;
+    border-bottom: 1.5px solid #cbd5e1;
+    padding-bottom: 4px;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.resume-entry-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 14px;
+    color: #0f172a;
+}
+
+.resume-entry-sub {
+    font-size: 13px;
+    color: #475569;
+    font-style: italic;
+    margin-bottom: 6px;
+}
+
+.resume-skill-badge {
+    display: inline-block;
+    background: #f1f5f9;
+    color: #0f172a;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    margin: 2px;
+    border: 1px solid #e2e8f0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Top Action Bar (Hidden when printing to PDF) -->
+<div class="action-bar-container" style="max-width: 820px; margin: 0 auto 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+    <div>
+        <a href="{{ url_for('user.profile') }}" class="btn btn-secondary btn-sm">
+            ← Edit Profile Details
+        </a>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn btn-primary btn-sm" onclick="window.print()">
+            🖨️ Print / Download as PDF
+        </button>
+        <a href="{{ url_for('user.dashboard') }}" class="btn btn-secondary btn-sm">
+            Overview Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Resume Generation Controls: Languages Known & Area of Interest (Hidden during print) -->
+<div class="resume-quick-controls card" style="max-width: 820px; margin: 0 auto 20px; background: #f8fafc; border: 1px solid var(--border); padding: 18px 24px;">
+    <form method="POST" action="{{ url_for('user.generate_resume') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+            <div>
+                <h3 style="font-size: 15px; font-weight: 700; color: #0f172a; margin: 0;">
+                    ✨ Resume Customization &amp; Generation
+                </h3>
+                <p style="font-size: 12px; color: var(--text-muted); margin: 2px 0 0 0;">
+                    Update your target area of interest and spoken/natural languages directly on your generated resume.
+                </p>
+            </div>
+            <span class="badge badge-primary">Interactive Generator</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="gen-languages" style="font-weight: 600; font-size: 13px;">Languages Known</label>
+                <input type="text" id="gen-languages" name="languages_known" class="form-control" value="{{ user.languages_known or '' }}" placeholder="e.g. English, Tamil, Hindi, Spanish, French">
+                <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+                    Natural languages spoken and written for corporate communication.
+                </span>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="gen-area" style="font-weight: 600; font-size: 13px;">Area of Interest</label>
+                <input type="text" id="gen-area" name="area_of_interest" class="form-control" value="{{ user.area_of_interest or '' }}" placeholder="e.g. Artificial Intelligence, Cloud Computing, Full-Stack Web Development">
+                <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+                    Core engineering interest domains and technical target areas.
+                </span>
+            </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end;">
+            <button type="submit" class="btn btn-primary btn-sm" style="padding: 8px 18px;">
+                💾 Save &amp; Update Generated Resume
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Printable Clean ATS-Compliant Resume Document -->
+<div class="resume-sheet" id="printable-resume">
+    <!-- Header -->
+    <div style="text-align: center;">
+        <div class="resume-name">{{ user.full_name }}</div>
+        <div class="resume-contact" style="justify-content: center;">
+            {% if user.email %}<span>✉️ {{ user.email }}</span>{% endif %}
+            {% if user.phone %}<span>📞 {{ user.phone }}</span>{% endif %}
+            {% if user.linkedin_url %}<span>🔗 <a href="{{ user.linkedin_url }}" style="color: inherit; text-decoration: none;">LinkedIn</a></span>{% endif %}
+            {% if user.github_url %}<span>🐙 <a href="{{ user.github_url }}" style="color: inherit; text-decoration: none;">GitHub</a></span>{% endif %}
+        </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="resume-section-title">Professional Summary</div>
+    <p style="margin-bottom: 14px; text-align: justify;">
+        {{ user.bio or 'Driven technical engineering candidate with strong foundational problem-solving capabilities, practical application experience, and disciplined attention to technical execution.' }}
+    </p>
+
+    <!-- Areas of Interest -->
+    {% if user.area_of_interest %}
+    <div class="resume-section-title">Areas of Interest &amp; Domain Focus</div>
+    <div style="margin-bottom: 14px;">
+        <p style="margin: 0; font-size: 13.5px; color: #1e293b; font-weight: 500;">
+            {{ user.area_of_interest }}
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- Technical Skills -->
+    <div class="resume-section-title">Technical Competencies & Skills</div>
+    <div style="margin-bottom: 14px;">
+        {% if skills %}
+            {% for s in skills %}
+            <span class="resume-skill-badge">{{ s }}</span>
+            {% endfor %}
+        {% else %}
+            <span class="resume-skill-badge">C</span>
+            <span class="resume-skill-badge">Java</span>
+            <span class="resume-skill-badge">Python</span>
+            <span class="resume-skill-badge">SQL</span>
+            <span class="resume-skill-badge">Data Structures</span>
+        {% endif %}
+    </div>
+
+    <!-- Languages Known -->
+    {% if user.languages_known %}
+    <div class="resume-section-title">Languages Known</div>
+    <div style="margin-bottom: 14px;">
+        <p style="margin: 0; font-size: 13.5px; color: #1e293b; font-weight: 500;">
+            {{ user.languages_known }}
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- Education -->
+    <div class="resume-section-title">Education</div>
+    <div style="margin-bottom: 14px;">
+        <div class="resume-entry-header">
+            <span>{{ user.institution or 'State University Institute of Engineering' }}</span>
+            <span>{{ user.graduation_year or '2026' }}</span>
+        </div>
+        <div class="resume-entry-sub">
+            {{ user.degree or 'Bachelor of Technology in Computer Science and Engineering' }}
+        </div>
+    </div>
+
+    <!-- Projects -->
+    <div class="resume-section-title">Technical Projects & Applications</div>
+    <div style="margin-bottom: 14px;">
+        {% if user.projects %}
+            <div style="white-space: pre-line; margin-bottom: 8px;">{{ user.projects }}</div>
+        {% elif extracted.projects %}
+            <div style="white-space: pre-line; margin-bottom: 8px;">{{ extracted.projects }}</div>
+        {% else %}
+            <div style="margin-bottom: 10px;">
+                <div class="resume-entry-header">
+                    <span>Automated Career Advancement Platform (SCAP)</span>
+                    <span>2026</span>
+                </div>
+                <div class="resume-entry-sub">Python, Flask, Oracle Database / SQLite, Natural Language Processing</div>
+                <ul style="margin: 4px 0 0 18px; padding: 0;">
+                    <li>Architected scalable multi-tiered web platform supporting student career synthesis, advisory grading, and technical assessments.</li>
+                    <li>Integrated parameterized database queries with relational integrity across 10 tables.</li>
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Experience / Internships -->
+    {% if user.experience or extracted.experience %}
+    <div class="resume-section-title">Practical Experience & Internships</div>
+    <div style="margin-bottom: 14px;">
+        <div style="white-space: pre-line;">{{ user.experience or extracted.experience }}</div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

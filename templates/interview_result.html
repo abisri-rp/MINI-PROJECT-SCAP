@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Interview Results{% endblock %}
+{% block page_title %}Technical Mock Interview Evaluation{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Mock Interview Results</h1>
+        <p class="page-subtitle">Track: {{ category_name }} &bull; Level: {{ difficulty }}</p>
+    </div>
+    <div>
+        <a href="{{ url_for('assessments.interview') }}" class="btn btn-secondary btn-sm">
+            &#x21BA; Retake Interview
+        </a>
+    </div>
+</div>
+
+<!-- Score Card -->
+{% if score_pct >= 70 %}
+    {% set circle_cls = 'score-circle score-circle-pass' %}
+{% elif score_pct >= 50 %}
+    {% set circle_cls = 'score-circle score-circle-warn' %}
+{% else %}
+    {% set circle_cls = 'score-circle score-circle-fail' %}
+{% endif %}
+
+<div class="score-hero-box" style="margin-bottom: 28px;">
+    <div>
+        <span class="badge badge-approved" style="margin-bottom: 12px;">Evaluation Complete</span>
+        <h2 style="font-size: 26px; color: white; margin-bottom: 6px;">
+            Assessment Performance: {{ score_pct }}%
+        </h2>
+        <p style="color: #cbd5e1; font-size: 14px;">
+            {% if score_pct >= 75 %}
+            Outstanding technical readiness! You demonstrated solid architectural understanding.
+            {% elif score_pct >= 50 %}
+            Solid foundational knowledge with a few areas open for technical strengthening.
+            {% else %}
+            Needs reinforcement. Focus on the foundational concepts and rubric feedback below.
+            {% endif %}
+        </p>
+    </div>
+    <div class="{{ circle_cls }}">
+        <div class="score-num">{{ score_pct | int }}%</div>
+        <div class="score-out-of">Score</div>
+    </div>
+</div>
+
+<!-- Detailed Question-by-Question Breakdown -->
+<h2 style="font-size: 18px; margin-bottom: 16px;">Detailed Question Evaluation</h2>
+<div style="display: flex; flex-direction: column; gap: 18px;">
+    {% for res in graded_responses %}
+    {% if res.is_correct %}
+        {% set res_cls = 'card result-card-correct' %}
+        {% set badge_cls = 'badge badge-approved' %}
+    {% else %}
+        {% set res_cls = 'card result-card-wrong' %}
+        {% set badge_cls = 'badge badge-improvement' %}
+    {% endif %}
+    <div class="{{ res_cls }}">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div style="font-size: 13px; font-weight: 700; color: var(--text-muted);">
+                Question {{ loop.index }} &bull; {{ res.question.topic }} ({{ res.question.question_type }})
+            </div>
+            <span class="{{ badge_cls }}">
+                Points: {{ res.points }}/10
+            </span>
+        </div>
+
+        <div style="font-size: 15px; font-weight: 600; margin-bottom: 12px;">
+            {{ res.question.question_text }}
+        </div>
+
+        <div style="background: #f8fafc; padding: 12px; border-radius: var(--radius-sm); margin-bottom: 10px; font-size: 13px;">
+            <strong>Your Submitted Answer:</strong> {{ res.user_answer if res.user_answer else 'No answer provided' }}
+        </div>
+
+        {% if res.question.question_type == 'MCQ' %}
+        <div style="font-size: 13px; color: #166534; margin-bottom: 8px;">
+            <strong>Correct Answer:</strong> Option ({{ res.question.correct_answer }})
+        </div>
+        {% endif %}
+
+        <div style="font-size: 13px; color: #334155; line-height: 1.5; background: #f0fdf4; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid #bbf7d0;">
+            <strong>Evaluation Feedback:</strong> {{ res.feedback }}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div style="text-align: center; margin-top: 32px;">
+    <a href="{{ url_for('assessments.progress') }}" class="btn btn-primary">
+        &#x1F4C8; View Integrated Progress Timeline &rarr;
+    </a>
+</div>
+{% endblock %}

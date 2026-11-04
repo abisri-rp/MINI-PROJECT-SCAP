@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SCAP{% endblock %} | Strategic Career Advancement Platform</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="app-container">
+    {% if is_logged_in %}
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo-icon">S</div>
+            <div>
+                <div class="sidebar-title">SCAP Platform</div>
+                <div class="sidebar-sub">Career Advancement</div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            {% if current_user_role == 'admin' %}
+            <div class="nav-section-title">Admin Management</div>
+            <a href="{{ url_for('admin.dashboard') }}" class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                <span class="nav-icon">📊</span> Admin Dashboard
+            </a>
+            <a href="{{ url_for('admin.users') }}" class="nav-link {% if request.endpoint == 'admin.users' %}active{% endif %}">
+                <span class="nav-icon">👥</span> Candidate Users
+            </a>
+            <a href="{{ url_for('admin.field_of_study') }}" class="nav-link {% if request.endpoint == 'admin.field_of_study' %}active{% endif %}">
+                <span class="nav-icon">🎓</span> Field of Study & Skills
+            </a>
+            <a href="{{ url_for('admin.reviews') }}" class="nav-link {% if 'admin.review' in request.endpoint %}active{% endif %}">
+                <span class="nav-icon">📝</span> Resume Reviews
+            </a>
+            <a href="{{ url_for('admin.questions') }}" class="nav-link {% if request.endpoint == 'admin.questions' %}active{% endif %}">
+                <span class="nav-icon">➕</span> Upload Questions
+            </a>
+            {% else %}
+            <div class="nav-section-title">Candidate Portal</div>
+            <a href="{{ url_for('user.dashboard') }}" class="nav-link {% if request.endpoint == 'user.dashboard' %}active{% endif %}">
+                <span class="nav-icon">🏠</span> Overview Dashboard
+            </a>
+            <a href="{{ url_for('user.profile') }}" class="nav-link {% if request.endpoint == 'user.profile' %}active{% endif %}">
+                <span class="nav-icon">👤</span> Candidate Profile
+            </a>
+
+            <div class="nav-section-title">Resume & Career Profile</div>
+            <a href="{{ url_for('resume.upload') }}" class="nav-link {% if request.endpoint == 'resume.upload' %}active{% endif %}">
+                <span class="nav-icon">📤</span> Upload Resume
+            </a>
+            <a href="{{ url_for('resume.analysis') }}" class="nav-link {% if request.endpoint == 'resume.analysis' %}active{% endif %}">
+                <span class="nav-icon">🔍</span> Resume Analysis
+            </a>
+            <a href="{{ url_for('user.generate_resume') }}" class="nav-link {% if request.endpoint == 'user.generate_resume' %}active{% endif %}">
+                <span class="nav-icon">✨</span> Generate Resume
+            </a>
+            <a href="{{ url_for('resume.skill_category') }}" class="nav-link {% if request.endpoint == 'resume.skill_category' %}active{% endif %}">
+                <span class="nav-icon">🏷️</span> Skill Category
+            </a>
+
+            <div class="nav-section-title">Assessments & Growth</div>
+            <a href="{{ url_for('assessments.interview') }}" class="nav-link {% if request.endpoint == 'assessments.interview' %}active{% endif %}">
+                <span class="nav-icon">🎯</span> Mock Interview
+            </a>
+            <a href="{{ url_for('assessments.aptitude') }}" class="nav-link {% if request.endpoint == 'assessments.aptitude' %}active{% endif %}">
+                <span class="nav-icon">⏱️</span> Aptitude Test
+            </a>
+            <a href="{{ url_for('assessments.history') }}" class="nav-link {% if request.endpoint == 'assessments.history' %}active{% endif %}">
+                <span class="nav-icon">📋</span> Assessment History
+            </a>
+            <a href="{{ url_for('assessments.progress') }}" class="nav-link {% if request.endpoint == 'assessments.progress' %}active{% endif %}">
+                <span class="nav-icon">📈</span> Progress Tracking
+            </a>
+            {% endif %}
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="db-pill {% if 'Oracle' in db_engine_name %}oracle{% endif %}" title="Active Database Engine">
+                <span style="font-size: 8px;">●</span> {{ db_engine_name }}
+            </div>
+            <div class="user-profile-badge">
+                <div class="user-info-text">
+                    <div class="user-name">{{ current_user_name }}</div>
+                    <div class="user-role-label">{{ current_user_role | capitalize }} Account</div>
+                </div>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm" title="Log Out" style="padding: 4px 8px;">
+                    🚪
+                </a>
+            </div>
+        </div>
+    </aside>
+    {% endif %}
+
+    <div class="main-wrapper" style="{% if not is_logged_in %}margin-left: 0;{% endif %}">
+        {% if is_logged_in %}
+        <header class="top-navbar">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <button id="sidebar-toggle" class="btn btn-secondary btn-sm" style="display: none;">☰</button>
+                <div class="navbar-title">{% block page_title %}Strategic Career Advancement{% endblock %}</div>
+            </div>
+            <div class="navbar-actions">
+                <span class="badge badge-neutral" style="font-size: 11px;">
+                    Role: <strong>{{ current_user_role | upper }}</strong>
+                </span>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm">Log Out</a>
+            </div>
+        </header>
+        {% endif %}
+
+        <main class="main-content">
+            <!-- Flash Notification Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <span>{{ message }}</span>
+                            <button type="button" onclick="this.parentElement.style.display='none'" style="background:none; border:none; cursor:pointer; font-size:16px;">&times;</button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+<!-- jQuery 3.7.1 & Bootstrap 5 Bundle -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

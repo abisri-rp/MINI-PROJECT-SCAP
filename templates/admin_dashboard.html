@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+{% block page_title %}Administrative Management Center{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">&#x1F451; Administrator Control Center</h1>
+        <p class="page-subtitle">Platform-wide overview of candidate registrations, NLP analyses, review pipelines, and assessment activity.</p>
+    </div>
+    <div>
+        <a href="{{ url_for('admin.reviews') }}" class="btn btn-primary">
+            &#x1F4DD; Open Review Queue ({{ kpis.pending_reviews }} Pending)
+        </a>
+    </div>
+</div>
+
+<!-- 7 Core KPI Metric Cards -->
+<div class="grid grid-cols-4" style="margin-bottom: 28px;">
+    <div class="card kpi-card">
+        <div class="kpi-icon-wrap kpi-icon-blue">&#x1F465;</div>
+        <div>
+            <div class="kpi-value">{{ kpis.total_users }}</div>
+            <div class="kpi-label">Registered Candidates</div>
+        </div>
+    </div>
+
+    <div class="card kpi-card">
+        <div class="kpi-icon-wrap kpi-icon-purple">&#x1F4C4;</div>
+        <div>
+            <div class="kpi-value">{{ kpis.total_resumes }}</div>
+            <div class="kpi-label">Uploaded Resumes</div>
+        </div>
+    </div>
+
+    <div class="card kpi-card">
+        <div class="kpi-icon-wrap kpi-icon-amber">&#x23F3;</div>
+        <div>
+            <div class="kpi-value">{{ kpis.pending_reviews }}</div>
+            <div class="kpi-label">Pending Faculty Reviews</div>
+        </div>
+    </div>
+
+    <div class="card kpi-card">
+        <div class="kpi-icon-wrap kpi-icon-emerald">&#x2713;</div>
+        <div>
+            <div class="kpi-value">{{ kpis.approved_resumes }}</div>
+            <div class="kpi-label">Approved Resumes</div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-3" style="margin-bottom: 28px;">
+    <div class="card kpi-card">
+        <div class="kpi-icon-wrap kpi-icon-rose">&#x26A0;&#xFE0F;</div>
+        <div>
+            <div class="kpi-value">{{ kpis.improvement_req }}</div>
+            <div class="kpi-label">Improvement Requests</div>
+        </div>
+    </div>
+
+    <div class="card kpi-card">
+        <div class="kpi-icon-wrap kpi-icon-blue">&#x1F4AC;</div>
+        <div>
+            <div class="kpi-value">{{ kpis.total_interviews }}</div>
+            <div class="kpi-label">Mock Interviews Taken</div>
+        </div>
+    </div>
+
+    <div class="card kpi-card">
+        <div class="kpi-icon-wrap kpi-icon-emerald">&#x26A1;</div>
+        <div>
+            <div class="kpi-value">{{ kpis.total_aptitude }}</div>
+            <div class="kpi-label">Aptitude Tests Submitted</div>
+        </div>
+    </div>
+</div>
+
+<!-- Skill Category Distribution & Review Queue -->
+<div class="grid grid-cols-2">
+    <!-- Category Distribution -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">&#x1F4CA; Career Track Distribution</div>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+            Breakdown of candidate profiles across career tracks and disciplines:
+        </p>
+        {% if kpis.category_distribution %}
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            {% for cat in kpis.category_distribution %}
+            {% set bar_pct = ((cat.count / kpis.total_resumes) * 100) | round(1) if kpis.total_resumes > 0 else 0 %}
+            <div>
+                <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 4px;">
+                    <span>{{ cat.predicted_category }}</span>
+                    <span>{{ cat.count }} Candidates</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill js-bar-fill" data-width="{{ bar_pct }}"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="font-size: 13px; color: var(--text-muted);">No categorized resumes yet.</p>
+        {% endif %}
+    </div>
+
+    <!-- Recent Review Actions -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">&#x1F4DD; Recent Candidate Submissions</div>
+            <a href="{{ url_for('admin.reviews') }}" style="font-size: 13px; color: var(--primary); text-decoration: none; font-weight: 600;">View All &rarr;</a>
+        </div>
+        {% if recent_reviews %}
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            {% for r in recent_reviews[:5] %}
+            {% if r.review_status == 'Approved' %}
+                {% set status_cls = 'badge badge-approved' %}
+            {% elif r.review_status == 'Improvement Required' %}
+                {% set status_cls = 'badge badge-improvement' %}
+            {% else %}
+                {% set status_cls = 'badge badge-pending' %}
+            {% endif %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                <div>
+                    <div style="font-weight: 700; font-size: 13px;">{{ r.candidate_name }}</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">{{ r.filename }} (Score: {{ r.total_score }})</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span class="{{ status_cls }}">{{ r.review_status }}</span>
+                    <a href="{{ url_for('admin.review_resume', review_id=r.review_id) }}" class="btn btn-secondary btn-sm" style="font-size: 11px;">
+                        Review &rarr;
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="font-size: 13px; color: var(--text-muted);">No submissions in the review queue.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Placement Readiness & Assessment Analytics (Non-Confidential Summary) -->
+<div style="margin-top: 28px;">
+    <div style="margin-bottom: 14px;">
+        <h2 style="font-size: 18px; font-weight: 800; color: var(--text-main); margin: 0;">
+            📈 Placement Readiness & Evaluation Benchmarks
+        </h2>
+        <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">
+            Aggregated performance metrics across candidate resumes and automated assessments.
+        </p>
+    </div>
+
+    <div class="grid grid-cols-4">
+        <!-- Average Resume Score -->
+        <div class="card kpi-card">
+            <div class="kpi-icon-wrap kpi-icon-blue">📊</div>
+            <div>
+                <div class="kpi-value">{{ kpis.avg_resume_score }}<span style="font-size: 16px; font-weight: 500; color: var(--text-muted);">/100</span></div>
+                <div class="kpi-label">Avg Resume Quality</div>
+            </div>
+        </div>
+
+        <!-- Mock Interview Performance -->
+        <div class="card kpi-card">
+            <div class="kpi-icon-wrap kpi-icon-purple">🎙️</div>
+            <div>
+                <div class="kpi-value">{{ kpis.avg_interview_score }}%</div>
+                <div class="kpi-label">Avg Mock Interview Score</div>
+            </div>
+        </div>
+
+        <!-- Aptitude Performance -->
+        <div class="card kpi-card">
+            <div class="kpi-icon-wrap kpi-icon-emerald">⏱️</div>
+            <div>
+                <div class="kpi-value">{{ kpis.avg_aptitude_score }}%</div>
+                <div class="kpi-label">Avg Aptitude Score</div>
+            </div>
+        </div>
+
+        <!-- Active Database Engine -->
+        <div class="card kpi-card">
+            <div class="kpi-icon-wrap kpi-icon-amber">🗄️</div>
+            <div>
+                <div style="font-size: 15px; font-weight: 800; color: var(--text-main); margin-bottom: 2px;">
+                    {% if 'Oracle' in db_engine_name %}Oracle 21c{% else %}SQLite Local{% endif %}
+                </div>
+                <div class="kpi-label">Active Database Status</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* Apply data-width to progress bars — avoids Jinja2 in style attribute */
+document.querySelectorAll('.js-bar-fill').forEach(function(el) {
+    el.style.width = el.getAttribute('data-width') + '%';
+});
+</script>
+{% endblock %}

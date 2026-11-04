@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Candidate Registration{% endblock %}
+
+{% block content %}
+<div style="max-width: 480px; margin: 30px auto;">
+    <div class="card" style="box-shadow: var(--shadow-lg);">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <div class="sidebar-logo-icon" style="margin: 0 auto 12px; width: 48px; height: 48px; font-size: 22px;">S</div>
+            <h2 style="font-size: 22px; font-weight: 800;">Create Candidate Account</h2>
+            <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">
+                Join the Strategic Career Advancement Platform
+            </p>
+        </div>
+
+        <form method="POST" action="{{ url_for('auth.register') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+            <div class="form-group">
+                <label class="form-label" for="reg-name">Full Name</label>
+                <input type="text" id="reg-name" name="full_name" class="form-control" placeholder="e.g. Alex Morgan" value="{{ full_name or '' }}" required autofocus>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="reg-email">Email Address</label>
+                <input type="email" id="reg-email" name="email" class="form-control" placeholder="alex@college.edu" value="{{ email or '' }}" required>
+            </div>
+
+            <div class="grid grid-cols-2" style="gap: 16px; margin-bottom: 20px;">
+                <div>
+                    <label class="form-label" for="reg-password">Password</label>
+                    <input type="password" id="reg-password" name="password" class="form-control" placeholder="Min. 6 characters" required>
+                </div>
+                <div>
+                    <label class="form-label" for="reg-confirm">Confirm Password</label>
+                    <input type="password" id="reg-confirm" name="confirm_password" class="form-control" placeholder="Re-enter password" required>
+                </div>
+            </div>
+
+            <div style="background: #f8fafc; border: 1px solid var(--border); padding: 12px; border-radius: var(--radius-sm); font-size: 12px; color: var(--text-muted); margin-bottom: 20px;">
+                🔒 <strong>Security Policy:</strong> Passwords are encrypted using modern cryptographic hashing. All public registrations are assigned candidate role privileges.
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 15px;">
+                Complete Registration
+            </button>
+        </form>
+
+        <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border); text-align: center; font-size: 13px; color: var(--text-muted);">
+            Already have an account? 
+            <a href="{{ url_for('auth.login') }}" style="color: var(--primary); font-weight: 600; text-decoration: none;">
+                Sign in here
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

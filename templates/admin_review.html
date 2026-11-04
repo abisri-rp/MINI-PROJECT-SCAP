@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+
+{% block title %}Review Candidate Resume{% endblock %}
+{% block page_title %}Admin Resume Review Workstation{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Candidate Review: {{ review.candidate_name }}</h1>
+        <p class="page-subtitle">Review ID #{{ review.review_id }} • Resume: {{ review.filename }} (v{{ review.version_number }})</p>
+    </div>
+    <div style="display: flex; gap: 8px;">
+        <a href="{{ url_for('admin.view_resume', resume_id=review.resume_id) }}" target="_blank" class="btn btn-primary btn-sm">
+            📄 View Uploaded Resume File ↗
+        </a>
+        <a href="{{ url_for('admin.reviews') }}" class="btn btn-secondary btn-sm">
+            ← Back to Queue
+        </a>
+    </div>
+</div>
+
+<!-- Score and Metadata Summary -->
+<div class="grid grid-cols-4" style="margin-bottom: 24px;">
+    <div class="card kpi-card">
+        <div class="kpi-icon-wrap kpi-icon-blue">🎯</div>
+        <div>
+            <div class="kpi-value">{{ review.total_score }}<span style="font-size: 14px; font-weight: normal; color: var(--text-muted);">/100</span></div>
+            <div class="kpi-label">Advisory Quality Score</div>
+        </div>
+    </div>
+    <div class="card kpi-card">
+        <div class="kpi-icon-wrap kpi-icon-emerald">🏷️</div>
+        <div>
+            <div class="kpi-value" style="font-size: 15px; font-weight: 700;">{{ review.predicted_category }}</div>
+            <div class="kpi-label">Target Technical Domain</div>
+        </div>
+    </div>
+    <div class="card kpi-card">
+        <div class="kpi-icon-wrap kpi-icon-purple">📊</div>
+        <div>
+            <div class="kpi-value">{{ (review.confidence_score * 100) | round(1) }}%</div>
+            <div class="kpi-label">Confidence Rating</div>
+        </div>
+    </div>
+    <div class="card kpi-card">
+        <div class="kpi-icon-wrap kpi-icon-amber">📋</div>
+        <div>
+            <div class="kpi-value" style="font-size: 15px;">{{ review.review_status }}</div>
+            <div class="kpi-label">Current Review Status</div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-2" style="margin-bottom: 28px;">
+    <!-- Left Column: Extracted Profile Information & Scores -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">🔍 Extracted Resume Information & Scoring</div>
+        </div>
+
+        <!-- 5 Component Scores -->
+        <div style="margin-bottom: 20px;">
+            <div style="font-size: 13px; font-weight: 700; margin-bottom: 8px;">Advisory Component Scores:</div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 13px;">
+                <div style="background: #f8fafc; padding: 8px 12px; border-radius: var(--radius-sm);">
+                    Completeness: <strong>{{ review.completeness_score }}/20</strong>
+                </div>
+                <div style="background: #f8fafc; padding: 8px 12px; border-radius: var(--radius-sm);">
+                    Skills Relevance: <strong>{{ review.skills_score }}/20</strong>
+                </div>
+                <div style="background: #f8fafc; padding: 8px 12px; border-radius: var(--radius-sm);">
+                    Projects Depth: <strong>{{ review.projects_score }}/20</strong>
+                </div>
+                <div style="background: #f8fafc; padding: 8px 12px; border-radius: var(--radius-sm);">
+                    Action Verbs: <strong>{{ review.verbs_score }}/20</strong>
+                </div>
+                <div style="background: #f8fafc; padding: 8px 12px; border-radius: var(--radius-sm); grid-column: span 2;">
+                    Readability & Layout: <strong>{{ review.readability_score }}/20</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Extracted Fields -->
+        <div style="font-size: 13px; line-height: 1.6; display: flex; flex-direction: column; gap: 12px;">
+            <div>
+                <strong>Candidate Name:</strong> {{ extracted.full_name or 'Not extracted' }}
+            </div>
+            <div>
+                <strong>Email:</strong> {{ extracted.email or 'Not extracted' }}
+            </div>
+            <div>
+                <strong>Phone:</strong> {{ extracted.phone or 'Not extracted' }}
+            </div>
+            <div>
+                <strong>Detected Skills:</strong>
+                <div class="skill-tags-wrap" style="margin-top: 6px;">
+                    {% for s in extracted.technical_skills %}
+                    <span class="skill-tag">{{ s }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            <div>
+                <strong>Education Summary:</strong>
+                <p style="color: var(--text-muted); background: #f8fafc; padding: 8px; border-radius: var(--radius-sm); margin-top: 4px;">
+                    {{ extracted.education or 'No education text parsed.' }}
+                </p>
+            </div>
+            <div>
+                <strong>Projects Overview:</strong>
+                <p style="color: var(--text-muted); background: #f8fafc; padding: 8px; border-radius: var(--radius-sm); margin-top: 4px;">
+                    {{ extracted.projects or 'No project text parsed.' }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Verification & Action Form -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">✍️ Review Determination & Corrections</div>
+        </div>
+
+        <form method="POST" action="{{ url_for('admin.review_resume', review_id=review.review_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+            <!-- Review Status Radio / Select -->
+            <div class="form-group">
+                <label class="form-label">Review Status Action</label>
+                <select name="review_status" class="form-control" required>
+                    <option value="Pending Review" {% if review.review_status == 'Pending Review' %}selected{% endif %}>
+                        ⏳ Pending Review (Keep in Queue)
+                    </option>
+                    <option value="Approved" {% if review.review_status == 'Approved' %}selected{% endif %}>
+                        ✓ Approved (Verified & Satisfactory)
+                    </option>
+                    <option value="Improvement Required" {% if review.review_status == 'Improvement Required' %}selected{% endif %}>
+                        ⚠️ Improvement Required (Requires Candidate Revisions)
+                    </option>
+                </select>
+            </div>
+
+            <!-- Verify Category -->
+            <div class="form-group">
+                <label class="form-label">Verified Technical Domain</label>
+                <select name="verified_category" class="form-control" required>
+                    {% for cat in categories %}
+                    <option value="{{ cat.category_name }}" {% if cat.category_name == review.verified_category or cat.category_name == review.predicted_category %}selected{% endif %}>
+                        {{ cat.category_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Review Feedback Comments -->
+            <div class="form-group">
+                <label class="form-label">
+                    Administrator Suggestions & Feedback <span style="color: var(--danger);">* (Mandatory)</span>
+                </label>
+                <textarea name="admin_comments" class="form-control" rows="3" placeholder="Provide required revisions, actionable suggestions, or approval guidance note for the candidate..." required>{{ review.admin_comments or '' }}</textarea>
+                <small style="color: var(--text-muted); font-size: 11px; margin-top: 3px; display: block;">
+                    * You must provide a written suggestion or review comment to submit and notify the candidate.
+                </small>
+            </div>
+
+            <div style="font-size: 13px; font-weight: 700; margin: 16px 0 8px; color: var(--text-main);">
+                Optional Extraction Error Corrections:
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" style="font-size: 12px;">Correct Full Name</label>
+                <input type="text" name="corr_full_name" class="form-control" value="{{ corrected.full_name if corrected.full_name else extracted.full_name }}">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" style="font-size: 12px;">Correct Education Summary</label>
+                <textarea name="corr_education" class="form-control" rows="2">{{ corrected.education if corrected.education else extracted.education }}</textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+                💾 Save Review & Notify Candidate
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Previous Resume Versions -->
+{% if all_resumes and all_resumes|length > 1 %}
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">📚 Candidate Resume Version History</div>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Version</th>
+                    <th>Filename</th>
+                    <th>Uploaded Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in all_resumes %}
+                <tr>
+                    <td><strong>Version {{ r.version_number }}</strong></td>
+                    <td>📄 {{ r.filename }}</td>
+                    <td>{{ r.uploaded_at }}</td>
+                    <td>
+                        {% if r.is_active == 1 %}
+                        <span class="badge badge-approved">Active Current Version</span>
+                        {% else %}
+                        <span class="badge badge-neutral">Archived Previous</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

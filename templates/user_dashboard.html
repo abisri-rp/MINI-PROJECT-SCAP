@@ -1,0 +1,262 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Candidate Overview Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Welcome, {{ user.full_name }}! 👋</h1>
+        <p class="page-subtitle">Track your resume evaluations, admin verifications, verified skills, and mock assessments.</p>
+    </div>
+    <div style="display: flex; gap: 12px;">
+        <a href="{{ url_for('resume.upload') }}" class="btn btn-primary">
+            📤 Upload Resume Version
+        </a>
+        <a href="{{ url_for('user.generate_resume') }}" class="btn btn-secondary">
+            ✨ Generate Resume
+        </a>
+    </div>
+</div>
+
+<!-- Admin Verification Notification Banner -->
+{% if latest_analysis and latest_analysis.review_status %}
+<div class="card" style="margin-bottom: 24px; border-left: 5px solid {% if latest_analysis.review_status == 'Approved' %}#10b981{% elif latest_analysis.review_status == 'Improvement Required' %}#ef4444{% else %}#f59e0b{% endif %};">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <div>
+            <div style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">
+                Faculty / Admin Verification Status
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
+                <span class="badge {% if latest_analysis.review_status == 'Approved' %}badge-approved{% elif latest_analysis.review_status == 'Improvement Required' %}badge-improvement{% else %}badge-pending{% endif %}">
+                    {{ latest_analysis.review_status }}
+                </span>
+                <span style="font-size: 14px; font-weight: 600;">
+                    Latest Resume: {{ latest_resume.filename }} (v{{ latest_resume.version_number }})
+                </span>
+            </div>
+            {% if latest_analysis.admin_comments %}
+            <div style="margin-top: 8px; font-size: 13px; color: #334155; background: #f8fafc; padding: 8px 12px; border-radius: var(--radius-sm); border-left: 3px solid #3b82f6;">
+                <strong>Admin Feedback:</strong> "{{ latest_analysis.admin_comments }}"
+            </div>
+            {% endif %}
+        </div>
+        <div>
+            <a href="{{ url_for('resume.analysis') }}" class="btn btn-secondary btn-sm">
+                View Full Analysis Report →
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Top Stats Grid -->
+<div class="grid grid-cols-4" style="margin-bottom: 28px;">
+    <!-- Score Card -->
+    <div class="card kpi-card">
+        <div class="kpi-icon-wrap kpi-icon-blue">🎯</div>
+        <div>
+            <div class="kpi-value">
+                {% if latest_analysis and latest_analysis.total_score and latest_analysis.total_score > 0 and latest_analysis.predicted_category not in ['Not a Resume', 'Not Classified (Not a Resume)', 'Unclassified'] %}
+                    {{ latest_analysis.total_score }}<span style="font-size: 16px; font-weight: 500; color: var(--text-muted);">/100</span>
+                {% else %}
+                    N/A
+                {% endif %}
+            </div>
+            <div class="kpi-label">Resume Quality Score</div>
+        </div>
+    </div>
+
+    <!-- Predicted Category -->
+    <div class="card kpi-card">
+        <div class="kpi-icon-wrap kpi-icon-emerald">🏷️</div>
+        <div>
+            <div class="kpi-value" style="font-size: 16px; font-weight: 700; line-height: 1.3;">
+                {% if latest_analysis and latest_analysis.predicted_category and latest_analysis.predicted_category not in ['Not a Resume', 'Not Classified (Not a Resume)', 'Unclassified'] and latest_analysis.total_score and latest_analysis.total_score > 0 %}
+                    {{ latest_analysis.predicted_category }}
+                {% else %}
+                    Unclassified
+                {% endif %}
+            </div>
+            <div class="kpi-label">Primary Technical Domain</div>
+        </div>
+    </div>
+
+    <!-- Mock Interview Score -->
+    <div class="card kpi-card">
+        <div class="kpi-icon-wrap kpi-icon-purple">💬</div>
+        <div>
+            <div class="kpi-value">
+                {% if latest_interview %}{{ latest_interview.score_percentage }}%{% else %}None{% endif %}
+            </div>
+            <div class="kpi-label">Mock Interview Score ({{ total_interviews }} taken)</div>
+        </div>
+    </div>
+
+    <!-- Aptitude Score -->
+    <div class="card kpi-card">
+        <div class="kpi-icon-wrap kpi-icon-amber">⚡</div>
+        <div>
+            <div class="kpi-value">
+                {% if latest_aptitude %}{{ latest_aptitude.score_percentage }}%{% else %}None{% endif %}
+            </div>
+            <div class="kpi-label">Aptitude Score ({{ total_aptitude }} taken)</div>
+        </div>
+    </div>
+</div>
+
+<!-- Main 2-Column Section -->
+<div class="grid grid-cols-2">
+    <!-- Left Column: Score Breakdown & Suggestions -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">📊 Resume Quality Component Breakdown</div>
+            <a href="{{ url_for('resume.analysis') }}" style="font-size: 13px; color: var(--primary); text-decoration: none; font-weight: 600;">Details →</a>
+        </div>
+
+        {% if latest_analysis and latest_analysis.total_score and latest_analysis.total_score > 0 and latest_analysis.predicted_category not in ['Not a Resume', 'Not Classified (Not a Resume)', 'Unclassified'] and extracted_data.get('is_valid_resume') is not sameas false %}
+        <div class="progress-container">
+            <div class="progress-header">
+                <span>Section Completeness</span>
+                <span>{{ latest_analysis.completeness_score }} / 20</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" style="width: {{ (latest_analysis.completeness_score / 20.0) * 100 }}%;"></div>
+            </div>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-header">
+                <span>Technical Skills Relevance</span>
+                <span>{{ latest_analysis.skills_score }} / 20</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" style="width: {{ (latest_analysis.skills_score / 20.0) * 100 }}%;"></div>
+            </div>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-header">
+                <span>Project Description Depth</span>
+                <span>{{ latest_analysis.projects_score }} / 20</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" style="width: {{ (latest_analysis.projects_score / 20.0) * 100 }}%;"></div>
+            </div>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-header">
+                <span>Action Verbs & Measurable Metrics</span>
+                <span>{{ latest_analysis.verbs_score }} / 20</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" style="width: {{ (latest_analysis.verbs_score / 20.0) * 100 }}%;"></div>
+            </div>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-header">
+                <span>Readability & Document Structure</span>
+                <span>{{ latest_analysis.readability_score }} / 20</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" style="width: {{ (latest_analysis.readability_score / 20.0) * 100 }}%;"></div>
+            </div>
+        </div>
+
+        <!-- Actionable Improvement Suggestions -->
+        {% if feedback_data.suggestions %}
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
+            <div style="font-size: 13px; font-weight: 700; color: #b45309; margin-bottom: 8px;">
+                💡 Priority Improvements Recommended:
+            </div>
+            <ul style="padding-left: 20px; font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+                {% for tip in feedback_data.suggestions[:3] %}
+                <li>{{ tip }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% elif latest_resume and (extracted_data.get('is_valid_resume') is sameas false or (latest_analysis and latest_analysis.predicted_category in ['Not a Resume', 'Not Classified (Not a Resume)']) or (latest_analysis and latest_analysis.total_score == 0)) %}
+        <div style="text-align: center; padding: 32px 16px; color: var(--text-muted);">
+            <div style="font-size: 32px; margin-bottom: 8px;">⚠️</div>
+            <div style="font-weight: 700; color: #9f1239; font-size: 15px; margin-bottom: 6px;">
+                Non-Resume Content File Detected
+            </div>
+            <p style="font-size: 13px; color: #be123c; max-width: 380px; margin: 0 auto 16px auto; line-height: 1.5;">
+                The uploaded file (<strong>{{ latest_resume.filename }}</strong>) does not contain valid candidate resume sections. Component statistics and scoring are disabled.
+            </p>
+            <a href="{{ url_for('resume.upload') }}" class="btn btn-primary btn-sm">
+                📤 Upload a Valid Resume
+            </a>
+        </div>
+
+        {% else %}
+        <div style="text-align: center; padding: 36px 12px; color: var(--text-muted);">
+            <p>No active resume has been uploaded yet.</p>
+            <a href="{{ url_for('resume.upload') }}" class="btn btn-primary btn-sm" style="margin-top: 12px;">
+                Upload Resume Now
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Right Column: Extracted Skills & Next Recommended Steps -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+        <!-- Detected Skills -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">🛠️ Extracted Technical Proficiencies</div>
+                <a href="{{ url_for('resume.skill_category') }}" style="font-size: 13px; color: var(--primary); text-decoration: none; font-weight: 600;">View Taxonomy →</a>
+            </div>
+
+            {% if user_skills %}
+            <div class="skill-tags-wrap">
+                {% for s in user_skills %}
+                <span class="skill-tag">
+                    {{ s.skill_name }}
+                    <span style="font-size: 10px; color: var(--text-muted); margin-left: 4px;">({{ s.category_name }})</span>
+                </span>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="font-size: 13px; color: var(--text-muted);">No technical skills detected yet. Upload a resume to populate your profile.</p>
+            {% endif %}
+        </div>
+
+        <!-- Quick Career Actions -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">🚀 Next Steps for Advancement</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <a href="{{ url_for('user.generate_resume') }}" style="text-decoration: none; display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                    <div>
+                        <div style="font-size: 14px; font-weight: 600; color: var(--text-main);">Generate Verified ATS Resume</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">Generate and print a pristine, single-page professional resume from your verified profile.</div>
+                    </div>
+                    <span class="btn btn-secondary btn-sm">Generate →</span>
+                </a>
+
+                <a href="{{ url_for('assessments.interview') }}" style="text-decoration: none; display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                    <div>
+                        <div style="font-size: 14px; font-weight: 600; color: var(--text-main);">Practice Technical Mock Interview</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">Test domain questions tailored to {{ latest_analysis.predicted_category if latest_analysis else 'your skills' }}.</div>
+                    </div>
+                    <span class="btn btn-secondary btn-sm">Start →</span>
+                </a>
+
+                <a href="{{ url_for('assessments.aptitude') }}" style="text-decoration: none; display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                    <div>
+                        <div style="font-size: 14px; font-weight: 600; color: var(--text-main);">Take Aptitude Assessment</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">Quantitative, logical reasoning, and verbal placement readiness exam.</div>
+                    </div>
+                    <span class="btn btn-secondary btn-sm">Practice →</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

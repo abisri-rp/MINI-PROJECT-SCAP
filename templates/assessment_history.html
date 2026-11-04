@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}Assessment History{% endblock %}
+{% block page_title %}Candidate Assessment History{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">&#x1F4CB; Assessment History</h1>
+        <p class="page-subtitle">Historical archive of your technical mock interviews and aptitude test performances.</p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <a href="{{ url_for('assessments.interview') }}" class="btn btn-primary btn-sm">
+            + New Mock Interview
+        </a>
+        <a href="{{ url_for('assessments.aptitude') }}" class="btn btn-secondary btn-sm">
+            + New Aptitude Test
+        </a>
+    </div>
+</div>
+
+<!-- Mock Interview Table -->
+<div class="card" style="margin-bottom: 28px;">
+    <div class="card-header">
+        <div class="card-title">&#x1F3AF; Technical Mock Interviews ({{ interviews | length }} Attempts)</div>
+    </div>
+    {% if interviews %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Attempt ID</th>
+                    <th>Date Taken</th>
+                    <th>Technical Track</th>
+                    <th>Difficulty</th>
+                    <th>Questions</th>
+                    <th>Score</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in interviews %}
+                {% if i.score_percentage >= 70 %}
+                    {% set i_cls = 'score-text-pass' %}
+                {% elif i.score_percentage >= 50 %}
+                    {% set i_cls = 'score-text-warn' %}
+                {% else %}
+                    {% set i_cls = 'score-text-fail' %}
+                {% endif %}
+                <tr>
+                    <td><strong>#{{ i.interview_id }}</strong></td>
+                    <td>{{ i.completed_at }}</td>
+                    <td><span class="badge badge-primary">{{ i.category_name or 'General' }}</span></td>
+                    <td><span class="badge badge-neutral">{{ i.difficulty }}</span></td>
+                    <td>{{ i.total_questions }}</td>
+                    <td><strong class="{{ i_cls }}">{{ i.score_percentage }}%</strong></td>
+                    <td><span class="badge badge-approved">Completed</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="font-size: 13px; color: var(--text-muted); padding: 12px 0;">No technical interviews recorded yet.</p>
+    {% endif %}
+</div>
+
+<!-- Aptitude Test Table -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">&#x23F1;&#xFE0F; Aptitude Test Attempts ({{ aptitudes | length }} Attempts)</div>
+    </div>
+    {% if aptitudes %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Attempt ID</th>
+                    <th>Date Taken</th>
+                    <th>Total Questions</th>
+                    <th>Correct</th>
+                    <th>Quant</th>
+                    <th>Logical</th>
+                    <th>Verbal</th>
+                    <th>Overall Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in aptitudes %}
+                {% if a.score_percentage >= 70 %}
+                    {% set a_cls = 'score-text-pass' %}
+                {% elif a.score_percentage >= 50 %}
+                    {% set a_cls = 'score-text-warn' %}
+                {% else %}
+                    {% set a_cls = 'score-text-fail' %}
+                {% endif %}
+                <tr>
+                    <td><strong>#{{ a.attempt_id }}</strong></td>
+                    <td>{{ a.completed_at }}</td>
+                    <td>{{ a.total_questions }}</td>
+                    <td>{{ a.correct_count }} / {{ a.total_questions }}</td>
+                    <td>{{ a.quant_score }}%</td>
+                    <td>{{ a.logical_score }}%</td>
+                    <td>{{ a.verbal_score }}%</td>
+                    <td><strong class="{{ a_cls }}">{{ a.score_percentage }}%</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="font-size: 13px; color: var(--text-muted); padding: 12px 0;">No aptitude tests recorded yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

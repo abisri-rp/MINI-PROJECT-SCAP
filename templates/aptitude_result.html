@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Aptitude Results{% endblock %}
+{% block page_title %}Aptitude Assessment Performance Report{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Aptitude Test Results</h1>
+        <p class="page-subtitle">Evaluation ID #{{ result.attempt_id }} • Completed under standard timer constraints</p>
+    </div>
+    <div>
+        <a href="{{ url_for('assessments.aptitude') }}" class="btn btn-secondary btn-sm">
+            ↺ Retake Aptitude Exam
+        </a>
+    </div>
+</div>
+
+<!-- Score Hero Box -->
+<div class="score-hero-box" style="margin-bottom: 28px;">
+    <div>
+        <span class="badge badge-approved" style="margin-bottom: 12px;">Automatic Objective Evaluation</span>
+        <h2 style="font-size: 26px; color: white; margin-bottom: 6px;">
+            Overall Score: {{ result.overall_score }}% ({{ result.correct_count }} / {{ result.total_questions }} Correct)
+        </h2>
+        <p style="color: #cbd5e1; font-size: 14px; max-width: 600px;">
+            {% if result.weak_sections %}
+            Identified areas needing reinforcement: <strong style="color: #fca5a5;">{{ result.weak_sections | join(', ') }}</strong>.
+            Tailored learning resources have been added to your Progress dashboard.
+            {% else %}
+            Balanced competency across Quantitative, Logical, and Verbal benchmarks!
+            {% endif %}
+        </p>
+    </div>
+    <div class="score-circle" style="border-color: {% if result.overall_score >= 70 %}#10b981{% elif result.overall_score >= 50 %}#f59e0b{% else %}#ef4444{% endif %};">
+        <div class="score-num">{{ result.overall_score | int }}%</div>
+        <div class="score-out-of">Score</div>
+    </div>
+</div>
+
+<!-- Sectional Performance Grid -->
+<div class="grid grid-cols-3" style="margin-bottom: 28px;">
+    <div class="card">
+        <div style="font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px;">1. Quantitative Aptitude</div>
+        <div style="font-size: 24px; font-weight: 800; color: var(--primary);">{{ result.quant_score }}%</div>
+        <div class="progress-track" style="margin-top: 8px;">
+            <div class="progress-fill" style="width: {{ result.quant_score }}%;"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div style="font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px;">2. Logical Reasoning</div>
+        <div style="font-size: 24px; font-weight: 800; color: #10b981;">{{ result.logical_score }}%</div>
+        <div class="progress-track" style="margin-top: 8px;">
+            <div class="progress-fill" style="width: {{ result.logical_score }}%; background: #10b981;"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div style="font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px;">3. Verbal Ability</div>
+        <div style="font-size: 24px; font-weight: 800; color: #8b5cf6;">{{ result.verbal_score }}%</div>
+        <div class="progress-track" style="margin-top: 8px;">
+            <div class="progress-fill" style="width: {{ result.verbal_score }}%; background: #8b5cf6;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Question Summary Table -->
+<h2 style="font-size: 18px; margin-bottom: 16px;">Comprehensive Answer Summary</h2>
+<div style="display: flex; flex-direction: column; gap: 14px;">
+    {% for r in result.detailed_results %}
+    <div class="card" style="border-left: 5px solid {% if r.is_correct %}#10b981{% else %}#ef4444{% endif %};">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span class="badge badge-primary">{{ r.question.aptitude_section }} • {{ r.question.topic }}</span>
+            <span class="badge {% if r.is_correct %}badge-approved{% else %}badge-improvement{% endif %}">
+                {% if r.is_correct %}✓ Correct (+1.0){% else %}✕ Incorrect (0.0){% endif %}
+            </span>
+        </div>
+
+        <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">
+            {{ r.question.question_text }}
+        </div>
+
+        <div style="display: flex; gap: 20px; font-size: 13px; margin-bottom: 8px; flex-wrap: wrap;">
+            <div>Your Choice: <strong style="color: {% if r.is_correct %}#166534{% else %}#991b1b{% endif %};">({{ r.selected_option }})</strong></div>
+            <div>Correct Option: <strong style="color: #166534;">({{ r.correct_option }})</strong></div>
+        </div>
+
+        <div style="font-size: 12px; color: #475569; background: #f8fafc; padding: 8px 12px; border-radius: var(--radius-sm);">
+            <strong>Explanation:</strong> {{ r.explanation }}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

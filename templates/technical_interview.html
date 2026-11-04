@@ -1,0 +1,480 @@
+{% extends 'base.html' %}
+
+{% block title %}Technical Mock Interview{% endblock %}
+{% block page_title %}Technical Mock Interview Assessment{% endblock %}
+
+{% block content %}
+<style>
+/* Timer and Dynamic Styles for Animated Effects */
+.assessment-timer-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: #f8fafc;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25);
+    border: 2px solid #3b82f6;
+    transition: all 0.4s ease;
+    animation: timerPulse 2s infinite ease-in-out;
+}
+
+@keyframes timerPulse {
+    0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
+.assessment-timer-badge.warning {
+    border-color: #f59e0b;
+    animation: timerWarningPulse 1.2s infinite ease-in-out;
+    background: linear-gradient(135deg, #451a03, #78350f);
+}
+
+@keyframes timerWarningPulse {
+    0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5); }
+    70% { box-shadow: 0 0 0 12px rgba(245, 158, 11, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+.assessment-timer-badge.danger {
+    border-color: #ef4444;
+    animation: timerDangerPulse 0.7s infinite ease-in-out;
+    background: linear-gradient(135deg, #450a0a, #7f1d1d);
+}
+
+@keyframes timerDangerPulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    50% { transform: scale(1.03); }
+    70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* Question Bubble Navigation Bar */
+.question-nav-bubbles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+}
+
+.q-bubble {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    background: #ffffff;
+    color: var(--text-muted);
+    border: 2px solid #cbd5e1;
+    transition: all 0.25s ease;
+}
+
+.q-bubble:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    transform: translateY(-2px);
+}
+
+.q-bubble.current {
+    background: #3b82f6;
+    color: #ffffff;
+    border-color: #1d4ed8;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    transform: scale(1.1);
+}
+
+.q-bubble.answered {
+    background: #10b981;
+    color: #ffffff;
+    border-color: #059669;
+}
+
+/* Question Step Animation */
+.question-step-page {
+    display: none;
+    animation: fadeInSlide 0.35s ease-out;
+}
+
+.question-step-page.active-step {
+    display: block;
+}
+
+@keyframes fadeInSlide {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Media Queries */
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    .assessment-timer-badge {
+        width: 100%;
+        justify-content: center;
+    }
+    .question-nav-bubbles {
+        justify-content: center;
+    }
+}
+</style>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">🎯 Technical Mock Interview</h1>
+        <p class="page-subtitle">Interactive one-question-per-page technical assessment with live countdown timer.</p>
+    </div>
+    
+    <!-- Timer & Track Filter -->
+    <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+        <!-- Live Animated Timer -->
+        <div id="interview-timer-badge" class="assessment-timer-badge">
+            <span style="font-size: 20px;">⏱️</span>
+            <div>
+                <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.8;">Time Remaining</div>
+                <div id="interview-timer-clock" style="font-size: 20px; font-weight: 800; font-family: monospace; letter-spacing: 0.05em;">
+                    {% if questions %}
+                        {% set total_secs = questions|length * 90 %}
+                        {% set mins = (total_secs // 60) %}
+                        {% set secs = (total_secs % 60) %}
+                        {{ "%02d:%02d"|format(mins, secs) }}
+                    {% else %}
+                        00:00
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <form method="GET" action="{{ url_for('assessments.interview') }}" style="display: flex; gap: 8px; align-items: center; margin: 0;">
+            <select name="category" class="form-control" style="width: auto; padding: 7px 10px; font-size: 12px;" onchange="this.form.submit()">
+                {% for cat in categories %}
+                <option value="{{ cat.category_name }}" {% if cat.category_name == selected_category %}selected{% endif %}>
+                    Track: {{ cat.category_name }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <select name="difficulty" class="form-control" style="width: auto; padding: 7px 10px; font-size: 12px;" onchange="this.form.submit()">
+                <option value="All" {% if selected_difficulty == 'All' %}selected{% endif %}>All Difficulties</option>
+                <option value="Beginner" {% if selected_difficulty == 'Beginner' %}selected{% endif %}>Beginner</option>
+                <option value="Intermediate" {% if selected_difficulty == 'Intermediate' %}selected{% endif %}>Intermediate</option>
+                <option value="Advanced" {% if selected_difficulty == 'Advanced' %}selected{% endif %}>Advanced</option>
+            </select>
+        </form>
+    </div>
+</div>
+
+{% if questions %}
+<!-- Progress Bar -->
+<div style="margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px; font-weight: 600;">
+        <span style="color: var(--primary);">
+            Question <span id="current-q-index-text">1</span> of {{ questions | length }}
+        </span>
+        <span id="progress-percentage-text" style="color: var(--text-muted);">
+            {{ ((1 / (questions | length)) * 100) | round(0) }}% Completed
+        </span>
+    </div>
+    <div style="height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden;">
+        <div id="interview-progress-fill" style="height: 100%; width: {{ (1 / (questions | length)) * 100 }}%; background: linear-gradient(90deg, #3b82f6, #10b981); transition: width 0.3s ease;"></div>
+    </div>
+</div>
+
+<!-- Question Navigator Bubbles -->
+<div class="question-nav-bubbles" id="interview-nav-bubbles">
+    {% for q in questions %}
+    <div class="q-bubble {% if loop.first %}current{% endif %}" data-target-step="{{ loop.index }}" id="q-bubble-{{ loop.index }}">
+        {{ loop.index }}
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Assessment Form (One Question Per Page) -->
+<form id="interview-form" method="POST" action="{{ url_for('assessments.interview') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="total_questions" value="{{ questions | length }}">
+    <input type="hidden" name="category_id" value="{{ questions[0].category_id or 1 }}">
+    <input type="hidden" name="difficulty" value="{{ selected_difficulty }}">
+
+    {% for q in questions %}
+    <div class="question-step-page {% if loop.first %}active-step{% endif %}" id="q-step-{{ loop.index }}" data-step="{{ loop.index }}">
+        <input type="hidden" name="question_id_{{ loop.index0 }}" value="{{ q.question_id }}">
+
+        <div class="card" style="box-shadow: 0 4px 20px rgba(0,0,0,0.06); border: 1px solid var(--border);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span class="badge" style="background: #3b82f6; color: white; font-weight: 700; font-size: 13px; padding: 4px 10px;">
+                        Question {{ loop.index }}
+                    </span>
+                    <span class="badge badge-primary">{{ q.topic }}</span>
+                    <span class="badge badge-neutral">{{ q.difficulty }}</span>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span class="badge {% if q.question_type == 'MCQ' %}badge-approved{% else %}badge-pending{% endif %}">
+                        {{ q.question_type }}
+                    </span>
+                    <span class="badge badge-neutral" style="font-weight: 600;">
+                        {{ q.mark_allocation or 10 }} Marks
+                    </span>
+                </div>
+            </div>
+
+            <h3 style="font-size: 18px; font-weight: 700; line-height: 1.5; color: var(--text-main); margin-bottom: 22px;">
+                {{ q.question_text }}
+            </h3>
+
+            {% if q.question_type == 'MCQ' %}
+            <!-- MCQ Options -->
+            <div style="display: flex; flex-direction: column; gap: 12px;" class="mcq-options-group" data-qindex="{{ loop.index }}">
+                <label style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; background: #ffffff; transition: all 0.2s ease;">
+                    <input type="radio" name="answer_{{ loop.index0 }}" value="A" class="q-answer-radio" data-step="{{ loop.index }}">
+                    <span style="font-weight: 800; color: #3b82f6; font-size: 15px;">A.</span>
+                    <span style="font-size: 14px; color: var(--text-main);">{{ q.option_a }}</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; background: #ffffff; transition: all 0.2s ease;">
+                    <input type="radio" name="answer_{{ loop.index0 }}" value="B" class="q-answer-radio" data-step="{{ loop.index }}">
+                    <span style="font-weight: 800; color: #3b82f6; font-size: 15px;">B.</span>
+                    <span style="font-size: 14px; color: var(--text-main);">{{ q.option_b }}</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; background: #ffffff; transition: all 0.2s ease;">
+                    <input type="radio" name="answer_{{ loop.index0 }}" value="C" class="q-answer-radio" data-step="{{ loop.index }}">
+                    <span style="font-weight: 800; color: #3b82f6; font-size: 15px;">C.</span>
+                    <span style="font-size: 14px; color: var(--text-main);">{{ q.option_c }}</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; background: #ffffff; transition: all 0.2s ease;">
+                    <input type="radio" name="answer_{{ loop.index0 }}" value="D" class="q-answer-radio" data-step="{{ loop.index }}">
+                    <span style="font-weight: 800; color: #3b82f6; font-size: 15px;">D.</span>
+                    <span style="font-size: 14px; color: var(--text-main);">{{ q.option_d }}</span>
+                </label>
+            </div>
+            {% else %}
+            <!-- Descriptive Textarea -->
+            <div>
+                <label class="form-label" style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">
+                    Provide your detailed technical explanation:
+                </label>
+                <textarea name="answer_{{ loop.index0 }}" class="form-control q-answer-text" data-step="{{ loop.index }}" rows="6" placeholder="Provide conceptual clarity, architecture, syntax, and relevant terminology..."></textarea>
+            </div>
+            {% endif %}
+
+            <!-- Step Navigation Buttons -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--border);">
+                <button type="button" class="btn btn-secondary btn-prev-q" {% if loop.first %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}>
+                    ← Previous Question
+                </button>
+
+                <div style="display: flex; gap: 10px;">
+                    {% if not loop.last %}
+                    <button type="button" class="btn btn-primary btn-next-q">
+                        Next Question →
+                    </button>
+                    {% else %}
+                    <button type="submit" class="btn btn-primary btn-lg" style="background: linear-gradient(135deg, #10b981, #059669); border-color: #059669;">
+                        🚀 Submit Mock Interview
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</form>
+
+{% else %}
+<div class="card" style="text-align: center; padding: 48px;">
+    <p style="color: var(--text-muted); font-size: 15px;">No questions found for the selected category or difficulty level.</p>
+    <a href="{{ url_for('assessments.interview') }}" class="btn btn-secondary btn-sm" style="margin-top: 12px;">Reset Filters</a>
+</div>
+{% endif %}
+
+<!-- Dynamic Script: Timer, Animations & Step Progression (Pure Vanilla JS) -->
+<script>
+(function() {
+    function initInterviewAssessment() {
+        var totalQuestions = {{ questions | length if questions else 0 }};
+        if (totalQuestions === 0) return;
+
+        var currentStep = 1;
+
+        // Timer setup: 90 seconds per question
+        var totalTimeSeconds = totalQuestions * 90;
+        var timeRemaining = totalTimeSeconds;
+        var timerBadge = document.getElementById('interview-timer-badge');
+        var timerClock = document.getElementById('interview-timer-clock');
+
+        function updateTimerDisplay() {
+            var minutes = Math.floor(timeRemaining / 60);
+            var seconds = timeRemaining % 60;
+            var formatted = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+            if (timerClock) timerClock.textContent = formatted;
+
+            var pctRemaining = (timeRemaining / totalTimeSeconds) * 100;
+
+            if (timerBadge) {
+                if (pctRemaining <= 20) {
+                    timerBadge.classList.remove('warning');
+                    timerBadge.classList.add('danger');
+                } else if (pctRemaining <= 50) {
+                    timerBadge.classList.remove('danger');
+                    timerBadge.classList.add('warning');
+                } else {
+                    timerBadge.classList.remove('warning', 'danger');
+                }
+            }
+
+            if (timeRemaining <= 0) {
+                clearInterval(timerInterval);
+                if (timerClock) timerClock.textContent = '00:00';
+                alert('⏱️ Time has expired! Your mock interview responses are being submitted automatically.');
+                var form = document.getElementById('interview-form');
+                if (form) form.submit();
+            } else {
+                timeRemaining--;
+            }
+        }
+
+        updateTimerDisplay();
+        var timerInterval = setInterval(updateTimerDisplay, 1000);
+
+        // Function to navigate to a specific question step
+        function showStep(step) {
+            if (step < 1 || step > totalQuestions) return;
+            currentStep = step;
+
+            // Animate question transition
+            var pages = document.querySelectorAll('.question-step-page');
+            pages.forEach(function(page) {
+                page.classList.remove('active-step');
+                page.style.display = 'none';
+            });
+
+            var activePage = document.getElementById('q-step-' + step);
+            if (activePage) {
+                activePage.style.display = 'block';
+                activePage.classList.add('active-step');
+            }
+
+            // Update step index text and progress bar
+            var curText = document.getElementById('current-q-index-text');
+            if (curText) curText.textContent = step;
+
+            var pct = Math.round((step / totalQuestions) * 100);
+            var pctText = document.getElementById('progress-percentage-text');
+            if (pctText) pctText.textContent = pct + '% Completed';
+
+            var progressFill = document.getElementById('interview-progress-fill');
+            if (progressFill) progressFill.style.width = pct + '%';
+
+            // Update Question Navigator Bubbles
+            document.querySelectorAll('.q-bubble').forEach(function(bubble) {
+                bubble.classList.remove('current');
+            });
+            var curBubble = document.getElementById('q-bubble-' + step);
+            if (curBubble) curBubble.classList.add('current');
+
+            // Scroll to top of progress bar
+            var progressBar = document.getElementById('interview-progress-fill');
+            if (progressBar) {
+                progressBar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        // Global click handler for Next, Previous, and Bubble clicks
+        document.addEventListener('click', function(e) {
+            var nextBtn = e.target.closest('.btn-next-q');
+            if (nextBtn) {
+                e.preventDefault();
+                showStep(currentStep + 1);
+                return;
+            }
+
+            var prevBtn = e.target.closest('.btn-prev-q');
+            if (prevBtn) {
+                e.preventDefault();
+                showStep(currentStep - 1);
+                return;
+            }
+
+            var bubble = e.target.closest('.q-bubble');
+            if (bubble) {
+                var targetStep = parseInt(bubble.getAttribute('data-target-step'), 10);
+                if (targetStep) {
+                    e.preventDefault();
+                    showStep(targetStep);
+                    return;
+                }
+            }
+        });
+
+        // Option selection visual feedback & bubble marking
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('q-answer-radio')) {
+                var step = e.target.getAttribute('data-step');
+                var bubble = document.getElementById('q-bubble-' + step);
+                if (bubble) bubble.classList.add('answered');
+
+                var group = e.target.closest('.mcq-options-group');
+                if (group) {
+                    group.querySelectorAll('label').forEach(function(lbl) {
+                        lbl.style.background = '#ffffff';
+                        lbl.style.borderColor = 'var(--border)';
+                    });
+                }
+                var lbl = e.target.closest('label');
+                if (lbl) {
+                    lbl.style.background = '#eff6ff';
+                    lbl.style.borderColor = '#3b82f6';
+                }
+            }
+        });
+
+        // Textarea input event for descriptive questions
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('q-answer-text')) {
+                var step = e.target.getAttribute('data-step');
+                var bubble = document.getElementById('q-bubble-' + step);
+                if (bubble) {
+                    if (e.target.value.trim().length > 10) {
+                        bubble.classList.add('answered');
+                    } else {
+                        bubble.classList.remove('answered');
+                    }
+                }
+            }
+        });
+
+        // Form submission confirmation
+        var form = document.getElementById('interview-form');
+        if (form) {
+            form.addEventListener('submit', function() {
+                clearInterval(timerInterval);
+            });
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initInterviewAssessment);
+    } else {
+        initInterviewAssessment();
+    }
+})();
+</script>
+{% endblock %}

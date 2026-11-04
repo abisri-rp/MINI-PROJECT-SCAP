@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Error {{ code }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 60px auto; text-align: center;">
+    <div class="card" style="padding: 48px 24px;">
+        <div style="font-size: 56px; font-weight: 800; color: var(--primary); line-height: 1; margin-bottom: 12px;">
+            {{ code }}
+        </div>
+        <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">
+            {% if code == 404 %}Resource Not Found{% elif code == 413 %}File Too Large{% else %}System Notice{% endif %}
+        </h2>
+        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">
+            {{ message }}
+        </p>
+        <a href="{{ url_for('index') }}" class="btn btn-primary">
+            Return to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

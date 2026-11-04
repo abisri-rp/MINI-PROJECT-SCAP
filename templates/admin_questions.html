@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}Question Bank & Upload{% endblock %}
+{% block page_title %}Assessment Question Bank Administration{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">📝 Upload & Manage Assessment Questions</h1>
+        <p class="page-subtitle">Upload technical mock interview and aptitude test questions directly into the database repository with mark allocations.</p>
+    </div>
+</div>
+
+<!-- Upload Question Card -->
+<div class="card" style="margin-bottom: 28px;">
+    <div class="card-header">
+        <div class="card-title">➕ Add New Assessment Question</div>
+        <span class="badge badge-primary">Direct Database Sync</span>
+    </div>
+
+    <form method="POST" action="{{ url_for('admin.questions') }}" id="question-upload-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Question No / Code</label>
+                <input type="text" name="question_no" class="form-control" placeholder="e.g. Q-101" required>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Assessment Type</label>
+                <select name="question_type" id="question_type_select" class="form-control" onchange="toggleQuestionFields()" required>
+                    <option value="DESCRIPTIVE">Mock Interview (Technical / Descriptive)</option>
+                    <option value="APTITUDE">Aptitude Test (Multiple Choice)</option>
+                    <option value="MCQ">Technical MCQ</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Mark Allocation</label>
+                <input type="number" name="mark_allocation" class="form-control" value="5" min="1" max="25" required>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Difficulty Level</label>
+                <select name="difficulty" class="form-control" required>
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate" selected>Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Technical Category</label>
+                <select name="category_id" class="form-control">
+                    <option value="">-- General / Common --</option>
+                    {% for c in categories %}
+                    <option value="{{ c.category_id }}">{{ c.category_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Topic / Skill</label>
+                <input type="text" name="topic" class="form-control" placeholder="e.g. C Programming, Java, Data Structures, Speed & Distance" required>
+            </div>
+        </div>
+
+        <div class="form-group" id="aptitude_section_wrap" style="display: none;">
+            <label class="form-label">Aptitude Section</label>
+            <select name="aptitude_section" class="form-control">
+                <option value="Quantitative">Quantitative Aptitude</option>
+                <option value="Logical">Logical Reasoning</option>
+                <option value="Verbal">Verbal Ability</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Question Text</label>
+            <textarea name="question_text" class="form-control" rows="3" placeholder="Enter the complete question problem statement or technical prompt..." required></textarea>
+        </div>
+
+        <!-- Options for MCQ / Aptitude (Toggled dynamically) -->
+        <div id="mcq_options_group" style="display: none; background: #f8fafc; padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 16px;">
+            <div style="font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--text-main);">
+                Multiple Choice Options (Required for Aptitude / MCQ):
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="font-size: 11px;">Option A</label>
+                    <input type="text" name="option_a" id="option_a" class="form-control" placeholder="Option A text">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="font-size: 11px;">Option B</label>
+                    <input type="text" name="option_b" id="option_b" class="form-control" placeholder="Option B text">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="font-size: 11px;">Option C</label>
+                    <input type="text" name="option_c" id="option_c" class="form-control" placeholder="Option C text">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="font-size: 11px;">Option D</label>
+                    <input type="text" name="option_d" id="option_d" class="form-control" placeholder="Option D text">
+                </div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Correct Answer / Key Solution</label>
+                <input type="text" name="correct_answer" class="form-control" placeholder="For Aptitude: option letter (e.g. A). For Technical: key answer summary" required>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Key Rubric Keywords (Comma-separated for Technical)</label>
+                <input type="text" name="rubric_keywords" class="form-control" placeholder="e.g. pointers, malloc, memory leak, segmentation fault">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Explanation / Solution Steps</label>
+            <textarea name="explanation" class="form-control" rows="2" placeholder="Step-by-step logic, mathematical derivation, or technical explanation..."></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+            <button type="reset" class="btn btn-secondary">Clear Form</button>
+            <button type="submit" class="btn btn-primary" style="padding: 10px 24px;">
+                💾 Upload Question to Database
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Existing Questions Repository Table -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">📚 Active Question Bank Database ({{ questions|length }} Questions)</div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th style="width: 70px;">Code</th>
+                    <th>Type</th>
+                    <th>Topic / Skill</th>
+                    <th>Question Statement</th>
+                    <th style="width: 80px;">Marks</th>
+                    <th>Difficulty</th>
+                    <th style="width: 90px;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for q in questions %}
+                <tr>
+                    <td><strong>{{ q.question_no or ('#' ~ q.question_id) }}</strong></td>
+                    <td>
+                        <span class="badge {% if q.question_type == 'APTITUDE' %}badge-primary{% elif q.question_type == 'DESCRIPTIVE' %}badge-approved{% else %}badge-neutral{% endif %}">
+                            {{ q.question_type }}
+                        </span>
+                    </td>
+                    <td><strong>{{ q.topic }}</strong></td>
+                    <td style="max-width: 380px;">
+                        <div style="font-size: 13px; font-weight: 600; margin-bottom: 2px;">{{ q.question_text[:120] }}{% if q.question_text|length > 120 %}...{% endif %}</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">
+                            Answer: <code>{{ q.correct_answer[:60] }}</code>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge badge-neutral" style="font-weight: 700;">{{ q.mark_allocation or 5 }} pts</span>
+                    </td>
+                    <td>
+                        <span class="badge {% if q.difficulty == 'Advanced' %}badge-rose{% elif q.difficulty == 'Intermediate' %}badge-amber{% else %}badge-emerald{% endif %}">
+                            {{ q.difficulty }}
+                        </span>
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('admin.delete_question', question_id=q.question_id) }}" onsubmit="return confirm('Delete this question from database?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--danger); font-size: 11px;">
+                                🗑️ Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function toggleQuestionFields() {
+    var qType = document.getElementById('question_type_select').value;
+    var mcqGroup = document.getElementById('mcq_options_group');
+    var aptGroup = document.getElementById('aptitude_section_wrap');
+    if (qType === 'APTITUDE' || qType === 'MCQ') {
+        mcqGroup.style.display = 'block';
+        if (qType === 'APTITUDE') {
+            aptGroup.style.display = 'block';
+        } else {
+            aptGroup.style.display = 'none';
+        }
+    } else {
+        mcqGroup.style.display = 'none';
+        aptGroup.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

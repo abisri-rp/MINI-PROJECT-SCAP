@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Resume & Profile Setup{% endblock %}
+{% block page_title %}Resume & Career Profile Setup{% endblock %}
+
+{% block content %}
+<div style="max-width: 820px; margin: 0 auto;">
+    <div class="page-header" style="text-align: center; display: block; margin-bottom: 24px;">
+        <h1 class="page-title">Candidate Profile & Resume Setup</h1>
+        <p class="page-subtitle">Choose your preferred setup method: extract information from your existing resume, or enter your details manually to generate a verified resume.</p>
+    </div>
+
+    <!-- Two-Choice Setup Navigation Tabs -->
+    <div class="card" style="padding: 12px; margin-bottom: 24px; background: #f8fafc;">
+        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+            <button type="button" id="tab-btn-extract" class="btn btn-primary" onclick="switchSetupMode('extract')">
+                📄 Choice 1: Data Extracted from Resume
+            </button>
+            <a href="{{ url_for('user.profile') }}" id="tab-btn-manual" class="btn btn-secondary">
+                ✍️ Choice 2: Enter Details Manually
+            </a>
+            <a href="{{ url_for('user.generate_resume') }}" class="btn btn-secondary" style="border-color: #cbd5e1;">
+                ✨ Generate Resume from Details →
+            </a>
+        </div>
+    </div>
+
+    {% if latest_resume %}
+    <div class="card" style="margin-bottom: 24px; background: #eff6ff; border-color: #bfdbfe;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <span class="badge badge-primary" style="margin-bottom: 4px;">Active Version {{ latest_resume.version_number }}</span>
+                <div style="font-size: 15px; font-weight: 700; color: #1e3a8a;">
+                    📄 {{ latest_resume.filename }}
+                </div>
+                <div style="font-size: 12px; color: #3b82f6;">
+                    Uploaded on {{ latest_resume.uploaded_at }}
+                </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <a href="{{ url_for('resume.analysis') }}" class="btn btn-primary btn-sm">
+                    View Analysis & Score →
+                </a>
+                <a href="{{ url_for('user.generate_resume') }}" class="btn btn-secondary btn-sm">
+                    Generate Clean Resume →
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Choice 1 Panel: Resume Upload Dropzone -->
+    <div class="card" id="extract-panel">
+        <div class="card-header">
+            <div class="card-title">📤 Upload Resume (PDF or DOCX)</div>
+            <span class="badge badge-neutral">Auto-Extraction</span>
+        </div>
+
+        <form method="POST" action="{{ url_for('resume.upload') }}" enctype="multipart/form-data" id="resume-upload-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+            <div class="upload-dropzone" id="dropzone">
+                <div class="upload-icon">📁</div>
+                <h3 style="font-size: 18px; margin-bottom: 6px;">Drag and drop your resume file here</h3>
+                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 16px;">
+                    Only <strong>PDF (.pdf)</strong> and <strong>Word (.docx)</strong> files are allowed (Max 16 MB).
+                </p>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('resume-file-input').click()">
+                    Browse Local Computer
+                </button>
+                <input type="file" id="resume-file-input" name="resume" accept=".pdf,.docx" style="display: none;" required onchange="validateFileSelection(this)">
+                <div id="selected-file-name" style="margin-top: 14px; font-weight: 600; color: var(--primary); display: none;"></div>
+                <div id="file-format-error" style="display: none; color: var(--danger); font-weight: 700; font-size: 13px; margin-top: 10px;">
+                    Invalid file format. Only PDF and DOCX files are allowed.
+                </div>
+            </div>
+
+            <div style="margin-top: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                <div style="font-size: 12px; color: var(--text-muted);">
+                    🔒 Resumes are validated for proper resume formatting and section structure.
+                </div>
+                <button type="submit" id="parse-btn" class="btn btn-primary btn-lg">
+                    ⚡ Parse & Analyze Resume
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Automated Processing Overview (No ML model names displayed) -->
+    <div class="card" style="margin-top: 24px; background: #f8fafc;">
+        <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">What happens after upload?</h4>
+        <div class="grid grid-cols-3" style="gap: 16px; font-size: 13px; color: var(--text-muted);">
+            <div>
+                <strong>1. Profile Extraction:</strong> Document parsing extracts plain text, identifies contact details, and extracts technical proficiencies.
+            </div>
+            <div>
+                <strong>2. Quality Scoring:</strong> Evaluates section completeness, skills depth, projects, action verbs, and readability (0-100 advisory score).
+            </div>
+            <div>
+                <strong>3. Domain Alignment:</strong> Career intelligence categorizes your profile into your primary technical discipline and skill tracks.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function validateFileSelection(input) {
+    var errorDiv = document.getElementById('file-format-error');
+    var selectedDiv = document.getElementById('selected-file-name');
+    var parseBtn = document.getElementById('parse-btn');
+    
+    if (input.files && input.files[0]) {
+        var file = input.files[0];
+        var fileName = file.name;
+        var ext = fileName.split('.').pop().toLowerCase();
+        
+        if (ext !== 'pdf' && ext !== 'docx') {
+            errorDiv.innerText = "Invalid file format. Only PDF and DOCX files are allowed.";
+            errorDiv.style.display = 'block';
+            selectedDiv.style.display = 'none';
+            input.value = '';
+            parseBtn.disabled = true;
+            alert("Invalid file format. Only PDF and DOCX files are allowed.");
+        } else {
+            errorDiv.style.display = 'none';
+            selectedDiv.innerText = "Selected: " + fileName + " (" + (file.size / 1024).toFixed(1) + " KB)";
+            selectedDiv.style.display = 'block';
+            parseBtn.disabled = false;
+        }
+    }
+}
+</script>
+{% endblock %}

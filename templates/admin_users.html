@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Candidate Management{% endblock %}
+{% block page_title %}Candidate User Directory{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">👥 Candidate User Management</h1>
+        <p class="page-subtitle">Directory of all registered students, current resume statuses, and verification history.</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>Candidate Name</th>
+                    <th>Email Address</th>
+                    <th>Role</th>
+                    <th>Active Resume</th>
+                    <th>Quality Score</th>
+                    <th>Predicted Domain</th>
+                    <th>Review Status</th>
+                    <th style="width: 110px; text-align: center;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td><strong>#{{ u.user_id }}</strong></td>
+                    <td><strong>{{ u.full_name }}</strong></td>
+                    <td>{{ u.email }}</td>
+                    <td>
+                        <span class="badge {% if u.role == 'admin' %}badge-approved{% else %}badge-primary{% endif %}">
+                            {{ u.role | upper }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if u.filename and u.resume_id %}
+                        <div>📄 {{ u.filename }}</div>
+                        <a href="{{ url_for('admin.view_resume', resume_id=u.resume_id) }}" target="_blank" style="font-size: 11px; color: var(--primary); font-weight: 600; text-decoration: none;">
+                            👁️ Open Resume
+                        </a>
+                        {% else %}
+                        <span style="color: var(--text-muted); font-style: italic;">No resume uploaded</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if u.total_score is not none %}
+                        <strong style="color: var(--primary);">{{ u.total_score }}</strong>/100
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if u.predicted_category %}
+                        <span class="badge badge-neutral">{{ u.predicted_category }}</span>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if u.review_status %}
+                        <span class="badge {% if u.review_status == 'Approved' %}badge-approved{% elif u.review_status == 'Improvement Required' %}badge-improvement{% else %}badge-pending{% endif %}">
+                            {{ u.review_status }}
+                        </span>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                        {% if u.user_id == session.get('user_id') %}
+                        <span class="badge badge-neutral" title="You cannot delete your own active admin account">Current Admin</span>
+                        {% else %}
+                        <form method="POST" action="{{ url_for('admin.delete_user', user_id=u.user_id) }}" onsubmit="return confirm('Are you sure you want to delete user \'{{ u.full_name }}\' ({{ u.email }})? All their uploaded resumes, tests, and analyses will be permanently deleted.');" style="display: inline;">
+                            <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--danger); font-size: 11px; padding: 4px 10px; font-weight: 600;" title="Permanently delete this user">
+                                🗑️ Delete
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
