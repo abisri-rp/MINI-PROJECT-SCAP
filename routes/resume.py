@@ -44,7 +44,8 @@ def upload():
         file_ext = original_name.rsplit('.', 1)[1].lower()
         
         # User-specific directory
-        user_upload_dir = Config.UPLOAD_FOLDER / f"user_{user_id}"
+        from pathlib import Path
+        user_upload_dir = Path(Config.UPLOAD_FOLDER) / f"user_{user_id}"
         user_upload_dir.mkdir(parents=True, exist_ok=True)
         
         # Determine version and save
