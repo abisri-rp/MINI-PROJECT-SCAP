@@ -24,7 +24,7 @@ class Config:
     ORACLE_DSN = f"{ORACLE_HOST}:{ORACLE_PORT}/{ORACLE_SERVICE}"
     
     # SQLite Fallback Settings
-    SQLITE_PATH = BASE_DIR / "scap_database.db"
+    SQLITE_PATH = Path(os.getenv("SQLITE_PATH", "/tmp/scap_database.db"))
     
     # ML Models Folder
     ML_MODEL_DIR = BASE_DIR / "ml" / "models"
